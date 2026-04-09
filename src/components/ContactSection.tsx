@@ -8,8 +8,8 @@ const ContactSection = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const msg = `Hi EduGo, my name is ${name} and my phone number is ${phone}. I need help with admissions.`;
-    window.open(`https://wa.me/917439010107?text=${encodeURIComponent(msg)}`, "_blank");
+    const msg = `Hi EduGoClasses, my name is ${name} and my phone number is ${phone}. I need help with admissions.`;
+    window.open(`https://wa.me/919477408004?text=${encodeURIComponent(msg)}`, "_blank");
     setSubmitted(true);
   };
 
@@ -25,8 +25,8 @@ const ContactSection = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
-          <a href="tel:7439010107" className="flex items-center gap-2.5 px-5 py-3 rounded-xl bg-card shadow-sm border border-border text-foreground text-sm font-medium hover:shadow-md transition-all">
-            <Phone className="w-4 h-4 text-accent" /> 7439010107
+          <a href="tel:9477408004" className="flex items-center gap-2.5 px-5 py-3 rounded-xl bg-card shadow-sm border border-border text-foreground text-sm font-medium hover:shadow-md transition-all">
+            <Phone className="w-4 h-4 text-accent" /> 94774 08004
           </a>
           <a href="mailto:edugo4u@gmail.com" className="flex items-center gap-2.5 px-5 py-3 rounded-xl bg-card shadow-sm border border-border text-foreground text-sm font-medium hover:shadow-md transition-all">
             <Mail className="w-4 h-4 text-accent" /> edugo4u@gmail.com

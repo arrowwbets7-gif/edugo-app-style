@@ -1,4 +1,4 @@
-import { GraduationCap, Phone, Mail, MapPin } from "lucide-react";
+import { Phone, Mail, MapPin } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -7,12 +7,9 @@ const Footer = () => {
         <div className="grid md:grid-cols-3 gap-8 mb-10">
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-accent-foreground" />
-              </div>
+            <div className="flex items-center mb-4">
               <span className="text-lg font-extrabold font-heading">
-                Edu<span className="text-accent">Go</span>
+                EduGo<span className="text-accent">Classes</span>
               </span>
             </div>
             <p className="text-primary-foreground/50 text-sm leading-relaxed">All India Admission Forum – Your trusted partner for school coaching and higher education admissions.</p>
@@ -32,8 +29,8 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-sm mb-4">Contact Info</h4>
             <div className="space-y-3">
-              <a href="tel:7439010107" className="flex items-center gap-2.5 text-primary-foreground/60 text-sm hover:text-primary-foreground transition-colors">
-                <Phone className="w-4 h-4 text-accent" /> 7439010107
+              <a href="tel:9477408004" className="flex items-center gap-2.5 text-primary-foreground/60 text-sm hover:text-primary-foreground transition-colors">
+                <Phone className="w-4 h-4 text-accent" /> 94774 08004
               </a>
               <a href="mailto:edugo4u@gmail.com" className="flex items-center gap-2.5 text-primary-foreground/60 text-sm hover:text-primary-foreground transition-colors">
                 <Mail className="w-4 h-4 text-accent" /> edugo4u@gmail.com
@@ -46,7 +43,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-primary-foreground/10 pt-6 text-center">
-          <p className="text-primary-foreground/40 text-sm">© {new Date().getFullYear()} EduGo – All India Admission Forum. All rights reserved.</p>
+          <p className="text-primary-foreground/40 text-sm">© {new Date().getFullYear()} EduGoClasses – All India Admission Forum. All rights reserved.</p>
         </div>
       </div>
     </footer>

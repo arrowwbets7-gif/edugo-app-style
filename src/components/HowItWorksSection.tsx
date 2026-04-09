@@ -16,7 +16,7 @@ const HowItWorksSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold font-heading text-foreground">
             How It Works
           </h2>
-          <p className="text-muted-foreground mt-3 max-w-md mx-auto">Getting started with EduGo is easy — just 4 simple steps</p>
+          <p className="text-muted-foreground mt-3 max-w-md mx-auto">Getting started with EduGoClasses is easy — just 4 simple steps</p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-4xl mx-auto">
