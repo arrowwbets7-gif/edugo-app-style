@@ -4,13 +4,13 @@ const testimonials = [
   {
     name: "Rahul Sharma",
     course: "CBSE Coaching",
-    text: "EduGo helped me score 95% in my boards. The personal attention and small batch size made all the difference.",
+    text: "EduGoClasses helped me score 95% in my boards. The personal attention and small batch size made all the difference.",
     rating: 5,
   },
   {
     name: "Priya Das",
     course: "NIOS Admission",
-    text: "I was confused about NIOS admission process. EduGo guided me through every step seamlessly. Highly recommended!",
+    text: "I was confused about NIOS admission process. EduGoClasses guided me through every step seamlessly. Highly recommended!",
     rating: 5,
   },
   {
@@ -36,7 +36,7 @@ const TestimonialsSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold font-heading text-foreground">
             What Our Students Say
           </h2>
-          <p className="text-muted-foreground mt-3 max-w-md mx-auto">Real stories from students who achieved their goals with EduGo</p>
+          <p className="text-muted-foreground mt-3 max-w-md mx-auto">Real stories from students who achieved their goals with EduGoClasses</p>
         </div>
 
         <div className="flex gap-4 overflow-x-auto scroll-hide pb-4 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-visible">
