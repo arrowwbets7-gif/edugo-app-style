@@ -3,8 +3,11 @@ import HeroSection from "@/components/HeroSection";
 import CoachingSection from "@/components/CoachingSection";
 import AdmissionsSection from "@/components/AdmissionsSection";
 import TrustSection from "@/components/TrustSection";
+import HowItWorksSection from "@/components/HowItWorksSection";
 import WhyChooseSection from "@/components/WhyChooseSection";
+import TestimonialsSection from "@/components/TestimonialsSection";
 import SocialProofSection from "@/components/SocialProofSection";
+import FAQSection from "@/components/FAQSection";
 import CTASection from "@/components/CTASection";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
@@ -13,14 +16,17 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 
 const Index = () => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen scroll-smooth">
       <Header />
       <HeroSection />
       <CoachingSection />
       <AdmissionsSection />
       <TrustSection />
+      <HowItWorksSection />
       <WhyChooseSection />
+      <TestimonialsSection />
       <SocialProofSection />
+      <FAQSection />
       <CTASection />
       <ContactSection />
       <Footer />
