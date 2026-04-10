@@ -20,59 +20,71 @@ const EduGoAIChat = () => {
 
   // Drag state for the floating button
   const [btnPos, setBtnPos] = useState({ x: 0, y: 0 });
-  const [dragging, setDragging] = useState(false);
+  const draggingRef = useRef(false);
   const dragStartRef = useRef<{ x: number; y: number; bx: number; by: number } | null>(null);
   const didDragRef = useRef(false);
 
   // Drag state for the chat box
   const [boxOffset, setBoxOffset] = useState({ x: 0, y: 0 });
   const boxDragRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
-  const [boxDragging, setBoxDragging] = useState(false);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, open]);
 
-  // --- Button drag handlers ---
+  // --- Global pointer handlers for button drag ---
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!dragStartRef.current) return;
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDragRef.current = true;
+      setBtnPos({ x: dragStartRef.current.bx + dx, y: dragStartRef.current.by + dy });
+    };
+    const onUp = () => {
+      if (!dragStartRef.current) return;
+      draggingRef.current = false;
+      if (!didDragRef.current) setOpen((o) => !o);
+      dragStartRef.current = null;
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, []);
+
   const onBtnPointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
     dragStartRef.current = { x: e.clientX, y: e.clientY, bx: btnPos.x, by: btnPos.y };
     didDragRef.current = false;
-    setDragging(true);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    draggingRef.current = true;
   }, [btnPos]);
 
-  const onBtnPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragStartRef.current) return;
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDragRef.current = true;
-    setBtnPos({ x: dragStartRef.current.bx + dx, y: dragStartRef.current.by + dy });
+  // --- Global pointer handlers for box drag ---
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (!boxDragRef.current) return;
+      const dx = e.clientX - boxDragRef.current.x;
+      const dy = e.clientY - boxDragRef.current.y;
+      setBoxOffset({ x: boxDragRef.current.ox + dx, y: boxDragRef.current.oy + dy });
+    };
+    const onUp = () => {
+      boxDragRef.current = null;
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
   }, []);
 
-  const onBtnPointerUp = useCallback(() => {
-    dragStartRef.current = null;
-    setDragging(false);
-    if (!didDragRef.current) setOpen((o) => !o);
-  }, []);
-
-  // --- Chat box drag handlers (header only) ---
   const onBoxPointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
     boxDragRef.current = { x: e.clientX, y: e.clientY, ox: boxOffset.x, oy: boxOffset.y };
-    setBoxDragging(true);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }, [boxOffset]);
-
-  const onBoxPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!boxDragRef.current) return;
-    const dx = e.clientX - boxDragRef.current.x;
-    const dy = e.clientY - boxDragRef.current.y;
-    setBoxOffset({ x: boxDragRef.current.ox + dx, y: boxDragRef.current.oy + dy });
-  }, []);
-
-  const onBoxPointerUp = useCallback(() => {
-    boxDragRef.current = null;
-    setBoxDragging(false);
-  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -207,23 +219,22 @@ const EduGoAIChat = () => {
   return (
     <>
       {/* Floating draggable button */}
-      <button
+      <div
         onPointerDown={onBtnPointerDown}
-        onPointerMove={onBtnPointerMove}
-        onPointerUp={onBtnPointerUp}
         style={{
           transform: `translate(${btnPos.x}px, ${btnPos.y}px)`,
           touchAction: "none",
+          userSelect: "none",
         }}
         className={`fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors duration-200 select-none ${
           open
             ? "bg-muted text-muted-foreground scale-90"
             : "bg-primary text-primary-foreground hover:scale-110"
-        } ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+        } cursor-grab active:cursor-grabbing`}
         aria-label="Open EduGoAI Tutor"
       >
-        {open ? <X className="w-6 h-6" /> : <GraduationCap className="w-7 h-7" />}
-      </button>
+        {open ? <X className="w-6 h-6 pointer-events-none" /> : <GraduationCap className="w-7 h-7 pointer-events-none" />}
+      </div>
 
       {/* Draggable chat box */}
       {open && (
@@ -237,11 +248,9 @@ const EduGoAIChat = () => {
           {/* Header – draggable */}
           <div
             onPointerDown={onBoxPointerDown}
-            onPointerMove={onBoxPointerMove}
-            onPointerUp={onBoxPointerUp}
-            className={`bg-primary px-4 py-3 flex items-center justify-between flex-shrink-0 select-none ${boxDragging ? "cursor-grabbing" : "cursor-grab"}`}
+            className="bg-primary px-4 py-3 flex items-center justify-between flex-shrink-0 select-none cursor-grab active:cursor-grabbing"
           >
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 pointer-events-none">
               <GraduationCap className="w-5 h-5 text-primary-foreground flex-shrink-0" />
               <div className="min-w-0">
                 <h3 className="text-sm font-bold text-primary-foreground truncate">EduGoAI</h3>
