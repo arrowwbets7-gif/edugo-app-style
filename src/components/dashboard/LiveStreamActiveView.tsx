@@ -82,6 +82,8 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
   const [rankings, setRankings] = useState<any[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
+  const playerContainerId = `live-yt-player-${stream.id}`;
 
   useEffect(() => {
     fetchChat(stream.id);
