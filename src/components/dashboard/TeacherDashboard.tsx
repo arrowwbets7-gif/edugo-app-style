@@ -11,8 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import {
   LogOut, Home, Users, Video, CheckCircle2, XCircle,
-  Search, Trash2, Plus, ShieldCheck, Clock, GraduationCap, Loader2, LinkIcon, Megaphone,
-  Radio, Sparkles, RefreshCw, BarChart3, ClipboardCheck, BookOpen, UserX
+  Search, Trash2, Plus, ShieldCheck, Clock, Loader2, LinkIcon, Megaphone,
+  Radio, Sparkles, RefreshCw, BarChart3, ClipboardCheck, BookOpen, UserX,
+  TrendingUp, Activity, Eye, Flame, Award
 } from "lucide-react";
 import { toast } from "sonner";
 import PostsSection from "./PostsSection";
@@ -75,6 +76,14 @@ const TeacherDashboard = () => {
   const [studentFilter, setStudentFilter] = useState<"all" | "verified" | "pending">("all");
   const [videoClassFilter, setVideoClassFilter] = useState("");
 
+  // Analytics state
+  const [quizCount, setQuizCount] = useState(0);
+  const [totalAttempts, setTotalAttempts] = useState(0);
+  const [liveStreamCount, setLiveStreamCount] = useState(0);
+  const [postCount, setPostCount] = useState(0);
+  const [topStreaks, setTopStreaks] = useState<{ name: string; streak: number }[]>([]);
+  const [recentActivity, setRecentActivity] = useState<{ text: string; time: string }[]>([]);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
@@ -83,6 +92,7 @@ const TeacherDashboard = () => {
   useEffect(() => {
     fetchStudents();
     fetchVideos();
+    fetchAnalytics();
   }, []);
 
   const fetchStudents = async () => {
@@ -93,6 +103,44 @@ const TeacherDashboard = () => {
   const fetchVideos = async () => {
     const { data } = await supabase.from("videos").select("*").order("created_at", { ascending: false });
     if (data) setVideos(data as VideoItem[]);
+  };
+
+  const fetchAnalytics = async () => {
+    const [quizRes, attemptRes, streamRes, postRes, streakRes] = await Promise.all([
+      supabase.from("quizzes").select("*", { count: "exact", head: true }),
+      supabase.from("quiz_attempts").select("*", { count: "exact", head: true }),
+      supabase.from("live_streams").select("*", { count: "exact", head: true }),
+      supabase.from("posts").select("*", { count: "exact", head: true }),
+      supabase.from("streaks").select("user_id, current_streak").order("current_streak", { ascending: false }).limit(5),
+    ]);
+    setQuizCount(quizRes.count || 0);
+    setTotalAttempts(attemptRes.count || 0);
+    setLiveStreamCount(streamRes.count || 0);
+    setPostCount(postRes.count || 0);
+
+    if (streakRes.data && streakRes.data.length > 0) {
+      const userIds = streakRes.data.map((s: any) => s.user_id);
+      const { data: profs } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
+      const nameMap: Record<string, string> = {};
+      profs?.forEach((p: any) => { nameMap[p.user_id] = p.full_name; });
+      setTopStreaks(streakRes.data.map((s: any) => ({
+        name: nameMap[s.user_id] || "Student",
+        streak: s.current_streak,
+      })));
+    }
+
+    // Recent activity from quiz attempts
+    const { data: recentAttempts } = await supabase.from("quiz_attempts").select("student_id, submitted_at, score, total_marks").order("submitted_at", { ascending: false }).limit(5);
+    if (recentAttempts && recentAttempts.length > 0) {
+      const userIds = recentAttempts.map((a: any) => a.student_id);
+      const { data: profs } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
+      const nameMap: Record<string, string> = {};
+      profs?.forEach((p: any) => { nameMap[p.user_id] = p.full_name; });
+      setRecentActivity(recentAttempts.map((a: any) => ({
+        text: `${nameMap[a.student_id] || "Student"} scored ${a.score}/${a.total_marks}`,
+        time: new Date(a.submitted_at).toLocaleDateString(),
+      })));
+    }
   };
 
   const verifyStudent = async (userId: string) => {
@@ -108,7 +156,6 @@ const TeacherDashboard = () => {
   };
 
   const removeStudent = async (userId: string) => {
-    // Remove role and profile (auth user stays but loses access)
     await supabase.from("user_roles").delete().eq("user_id", userId);
     await supabase.from("profiles").delete().eq("user_id", userId);
     toast.success("Student removed");
@@ -228,8 +275,11 @@ const TeacherDashboard = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="students" className="space-y-3">
-          <TabsList className="w-full grid grid-cols-6 h-auto">
+        <Tabs defaultValue="overview" className="space-y-3">
+          <TabsList className="w-full grid grid-cols-7 h-auto">
+            <TabsTrigger value="overview" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
+              <TrendingUp className="w-4 h-4" /> Overview
+            </TabsTrigger>
             <TabsTrigger value="students" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
               <Users className="w-4 h-4" /> Students
             </TabsTrigger>
@@ -250,6 +300,108 @@ const TeacherDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
+          {/* Overview / Analytics Tab */}
+          <TabsContent value="overview" className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <Card className="border-border/50">
+                <CardContent className="pt-3 pb-2 text-center">
+                  <ClipboardCheck className="w-5 h-5 text-accent mx-auto mb-1" />
+                  <p className="text-lg font-bold">{quizCount}</p>
+                  <p className="text-[10px] text-muted-foreground">Quizzes Created</p>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50">
+                <CardContent className="pt-3 pb-2 text-center">
+                  <Activity className="w-5 h-5 text-primary mx-auto mb-1" />
+                  <p className="text-lg font-bold">{totalAttempts}</p>
+                  <p className="text-[10px] text-muted-foreground">Quiz Attempts</p>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50">
+                <CardContent className="pt-3 pb-2 text-center">
+                  <Radio className="w-5 h-5 text-destructive mx-auto mb-1" />
+                  <p className="text-lg font-bold">{liveStreamCount}</p>
+                  <p className="text-[10px] text-muted-foreground">Live Sessions</p>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50">
+                <CardContent className="pt-3 pb-2 text-center">
+                  <Megaphone className="w-5 h-5 text-accent mx-auto mb-1" />
+                  <p className="text-lg font-bold">{postCount}</p>
+                  <p className="text-[10px] text-muted-foreground">Posts</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Top Streaks */}
+            {topStreaks.length > 0 && (
+              <Card className="border-border/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Flame className="w-4 h-4 text-accent" /> Top Streaks
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {topStreaks.map((s, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-muted-foreground w-4">{i + 1}.</span>
+                        <span className="font-medium truncate">{s.name}</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs gap-1">
+                        <Flame className="w-3 h-3" /> {s.streak} days
+                      </Badge>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Recent Activity */}
+            {recentActivity.length > 0 && (
+              <Card className="border-border/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-primary" /> Recent Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {recentActivity.map((a, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="text-xs text-muted-foreground">{a.text}</span>
+                      <span className="text-[10px] text-muted-foreground flex-shrink-0">{a.time}</span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Quick content stats */}
+            <Card className="border-border/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-muted-foreground" /> Content Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Video className="w-3 h-3" /> <span>{videos.length} Videos</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Users className="w-3 h-3" /> <span>{students.length} Students</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Award className="w-3 h-3" /> <span>{verifiedCount} Verified</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="w-3 h-3" /> <span>{pendingCount} Pending</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="students" className="space-y-3">
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -258,7 +410,6 @@ const TeacherDashboard = () => {
               </div>
             </div>
             
-            {/* Pending approval section */}
             {pendingCount > 0 && studentFilter !== "verified" && (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-amber-600 flex items-center gap-1">

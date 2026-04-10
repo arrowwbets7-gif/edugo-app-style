@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Radio, Send, Pin, Trash2, X, Users, Eye, Maximize, Minimize,
-  HelpCircle, MessageCircle, Sparkles, BarChart3, ClipboardCheck
+  BarChart3, ClipboardCheck
 } from "lucide-react";
 import { toast } from "sonner";
 import CreatePollForm from "./CreatePollForm";
@@ -36,26 +36,6 @@ interface ChatMessage {
   created_at: string;
 }
 
-type ChatTag = "general" | "doubt" | "answer" | "cheer";
-
-const CHAT_TAGS: { value: ChatTag; label: string; icon: React.ReactNode; color: string }[] = [
-  { value: "general", label: "Chat", icon: <MessageCircle className="w-3 h-3" />, color: "bg-muted text-foreground" },
-  { value: "doubt", label: "Doubt", icon: <HelpCircle className="w-3 h-3" />, color: "bg-orange-500/15 text-orange-600 border-orange-500/30" },
-  { value: "answer", label: "Answer", icon: <Sparkles className="w-3 h-3" />, color: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" },
-  { value: "cheer", label: "Cheer", icon: <>🎉</>, color: "bg-pink-500/15 text-pink-600 border-pink-500/30" },
-];
-
-const getTagFromMessage = (msg: string): ChatTag => {
-  if (msg.startsWith("[Doubt]")) return "doubt";
-  if (msg.startsWith("[Answer]")) return "answer";
-  if (msg.startsWith("[Cheer]")) return "cheer";
-  return "general";
-};
-
-const stripTag = (msg: string): string => {
-  return msg.replace(/^\[(Doubt|Answer|Cheer)\]\s*/, "");
-};
-
 interface Props {
   stream: LiveStream;
   isTeacher: boolean;
@@ -70,8 +50,6 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [attendanceCount, setAttendanceCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [selectedTag, setSelectedTag] = useState<ChatTag>("general");
-  const [filterTag, setFilterTag] = useState<ChatTag | "all">("all");
   const [showLivePoll, setShowLivePoll] = useState(false);
   const [showLiveQuiz, setShowLiveQuiz] = useState(false);
   const [livePolls, setLivePolls] = useState<any[]>([]);
@@ -143,18 +121,13 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
     if (data) setLiveQuizzes(data);
   };
 
-  const startQuizAttempt = (quiz: any) => {
-    setActiveQuiz(quiz);
-  };
-
-  const fetchRankings = async (quizId: string, quizTitle: string) => {
+  const fetchRankings = async (quizId: string) => {
     const { data: attempts } = await supabase.from("quiz_attempts").select("*").eq("quiz_id", quizId).order("score", { ascending: false });
     if (attempts && attempts.length > 0) {
       const userIds = attempts.map((a: any) => a.student_id);
       const { data: profs } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
       const nameMap: Record<string, string> = {};
       profs?.forEach((p: any) => { nameMap[p.user_id] = p.full_name; });
-
       setRankings(attempts.map((a: any) => ({
         name: nameMap[a.student_id] || "Student",
         score: a.score,
@@ -168,9 +141,8 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !user || !stream) return;
-    const prefix = selectedTag !== "general" ? `[${selectedTag.charAt(0).toUpperCase() + selectedTag.slice(1)}] ` : "";
     const { error } = await supabase.from("live_chat_messages").insert({
-      stream_id: stream.id, user_id: user.id, message: prefix + newMessage.trim(),
+      stream_id: stream.id, user_id: user.id, message: newMessage.trim(),
     });
     if (error) toast.error("Failed to send");
     setNewMessage("");
@@ -201,7 +173,6 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
   }, []);
 
   const pinnedMessages = chatMessages.filter((m) => m.is_pinned);
-  const filteredMessages = filterTag === "all" ? chatMessages : chatMessages.filter((m) => getTagFromMessage(m.message) === filterTag);
 
   if (activeQuiz) {
     return (
@@ -271,20 +242,22 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
         <div className="absolute inset-0 z-20" />
       </div>
 
-      {/* Teacher: Live Poll / Quiz controls */}
+      {/* Teacher: Live Poll / Quiz controls - always visible buttons */}
       {isTeacher && stream.status === "live" && (
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Button
-            variant="outline" size="sm" className="flex-1 text-xs"
+            size="sm"
+            className={`text-xs ${showLivePoll ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"}`}
             onClick={() => { setShowLivePoll(!showLivePoll); setShowLiveQuiz(false); }}
           >
-            <BarChart3 className="w-3 h-3 mr-1" /> {showLivePoll ? "Hide Poll" : "Launch Poll"}
+            <BarChart3 className="w-4 h-4 mr-1" /> {showLivePoll ? "Cancel Poll" : "Launch Poll"}
           </Button>
           <Button
-            variant="outline" size="sm" className="flex-1 text-xs"
+            size="sm"
+            className={`text-xs ${showLiveQuiz ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"}`}
             onClick={() => { setShowLiveQuiz(!showLiveQuiz); setShowLivePoll(false); }}
           >
-            <ClipboardCheck className="w-3 h-3 mr-1" /> {showLiveQuiz ? "Hide Quiz" : "Launch Quiz"}
+            <ClipboardCheck className="w-4 h-4 mr-1" /> {showLiveQuiz ? "Cancel Quiz" : "Launch Quiz"}
           </Button>
         </div>
       )}
@@ -326,12 +299,12 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
                   {!isTeacher && (
-                    <Button size="sm" className="h-7 text-xs" onClick={() => startQuizAttempt(quiz)}>
+                    <Button size="sm" className="h-7 text-xs" onClick={() => setActiveQuiz(quiz)}>
                       Attempt
                     </Button>
                   )}
                   {isTeacher && (
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => fetchRankings(quiz.id, quiz.title)}>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => fetchRankings(quiz.id)}>
                       Rankings
                     </Button>
                   )}
@@ -351,7 +324,7 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
                 <Pin className="w-3 h-3 text-accent mt-0.5 flex-shrink-0" />
                 <div className="min-w-0">
                   <span className="font-medium text-xs">{profiles[m.user_id] || "Unknown"}: </span>
-                  <span className="text-muted-foreground break-words">{stripTag(m.message)}</span>
+                  <span className="text-muted-foreground break-words">{m.message}</span>
                 </div>
               </div>
             ))}
@@ -362,81 +335,41 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
       {/* Chat */}
       <Card className="border-border/50">
         <CardHeader className="py-2 px-3 border-b border-border/50">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Users className="w-4 h-4" /> Live Chat
-            </div>
-            {/* Chat filter */}
-            <div className="flex gap-1">
-              <button
-                onClick={() => setFilterTag("all")}
-                className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${filterTag === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-              >All</button>
-              {CHAT_TAGS.filter(t => t.value !== "general").map((tag) => (
-                <button
-                  key={tag.value}
-                  onClick={() => setFilterTag(tag.value)}
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors border ${filterTag === tag.value ? tag.color + " border-current" : "bg-muted text-muted-foreground border-transparent"}`}
-                >
-                  {tag.label}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Users className="w-4 h-4" /> Live Chat
           </div>
         </CardHeader>
         <ScrollArea className="h-48">
           <div className="p-2 space-y-1.5">
-            {filteredMessages.map((msg) => {
-              const tag = getTagFromMessage(msg.message);
-              const tagInfo = CHAT_TAGS.find((t) => t.value === tag);
-              return (
-                <div key={msg.id} className={`flex items-start gap-1.5 text-sm group ${msg.is_pinned ? "bg-accent/5 -mx-1 px-1 rounded" : ""}`}>
-                  <div className="flex-1 min-w-0">
-                    {tag !== "general" && tagInfo && (
-                      <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold mr-1 border ${tagInfo.color}`}>
-                        {tagInfo.icon} {tagInfo.label}
-                      </span>
-                    )}
-                    <span className="font-medium text-xs text-primary">
-                      {msg.user_id === user?.id ? "You" : (profiles[msg.user_id] || "User")}
-                    </span>
-                    <span className="text-muted-foreground ml-1 text-xs break-words">{stripTag(msg.message)}</span>
-                  </div>
-                  {isTeacher && (
-                    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 flex-shrink-0">
-                      <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => pinMessage(msg.id, msg.is_pinned)}>
-                        <Pin className={`w-2.5 h-2.5 ${msg.is_pinned ? "text-accent" : "text-muted-foreground"}`} />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => deleteMessage(msg.id)}>
-                        <Trash2 className="w-2.5 h-2.5" />
-                      </Button>
-                    </div>
-                  )}
+            {chatMessages.map((msg) => (
+              <div key={msg.id} className={`flex items-start gap-1.5 text-sm group ${msg.is_pinned ? "bg-accent/5 -mx-1 px-1 rounded" : ""}`}>
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-xs text-primary">
+                    {msg.user_id === user?.id ? "You" : (profiles[msg.user_id] || "User")}
+                  </span>
+                  <span className="text-muted-foreground ml-1 text-xs break-words">{msg.message}</span>
                 </div>
-              );
-            })}
+                {isTeacher && (
+                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 flex-shrink-0">
+                    <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => pinMessage(msg.id, msg.is_pinned)}>
+                      <Pin className={`w-2.5 h-2.5 ${msg.is_pinned ? "text-accent" : "text-muted-foreground"}`} />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => deleteMessage(msg.id)}>
+                      <Trash2 className="w-2.5 h-2.5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
             <div ref={chatEndRef} />
           </div>
         </ScrollArea>
 
-        {/* Chat input with tag selector */}
-        <div className="p-2 border-t border-border/50 space-y-1.5">
-          <div className="flex gap-1">
-            {CHAT_TAGS.map((tag) => (
-              <button
-                key={tag.value}
-                onClick={() => setSelectedTag(tag.value)}
-                className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium transition-all border ${
-                  selectedTag === tag.value ? tag.color + " border-current shadow-sm" : "bg-muted/50 text-muted-foreground border-transparent"
-                }`}
-              >
-                {tag.icon} {tag.label}
-              </button>
-            ))}
-          </div>
+        {/* Simple chat input */}
+        <div className="p-2 border-t border-border/50">
           <div className="flex gap-2">
             <Input
-              placeholder={selectedTag === "doubt" ? "Ask your doubt..." : selectedTag === "answer" ? "Share your answer..." : selectedTag === "cheer" ? "Cheer the class! 🎉" : "Type a message..."}
+              placeholder="Type a message..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
