@@ -244,15 +244,15 @@ const TeacherDashboard = () => {
           <Link to="/" className="text-lg font-extrabold font-heading text-primary-foreground">
             EduGo<span className="text-accent">Classes</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Badge className="bg-accent/20 text-accent border-accent/30 text-xs">Admin</Badge>
             <Link to="/">
-              <Button variant="ghost" size="icon" className="text-primary-foreground/70 hover:text-primary-foreground">
-                <Home className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-primary-foreground/70 hover:text-primary-foreground">
+                <Home className="h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground">
-              <LogOut className="w-5 h-5" />
+            <Button variant="ghost" size="icon" onClick={signOut} className="h-9 w-9 text-primary-foreground/70 hover:text-primary-foreground">
+              <LogOut className="h-5 w-5" />
             </Button>
           </div>
         </div>
