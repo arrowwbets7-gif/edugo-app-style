@@ -271,25 +271,33 @@ const StudentDashboard = () => {
 
         {/* Content tabs */}
         {profile?.is_verified ? (
-          <Tabs defaultValue="videos" className="space-y-3 animate-fade-in">
-            <TabsList className="w-full grid grid-cols-6 h-14 rounded-2xl bg-secondary/80 p-1">
-              <TabsTrigger value="videos" className="rounded-xl text-[11px] px-0.5 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Play className="w-4.5 h-4.5" /> Videos
+           <Tabs defaultValue="videos" className="space-y-3 animate-fade-in">
+            {/* Row 1: Main content tabs */}
+            <TabsList className="w-full grid grid-cols-4 h-12 rounded-2xl bg-secondary/80 p-1">
+              <TabsTrigger value="videos" className="rounded-xl text-[11px] px-1 py-1 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium">
+                <Play className="w-[18px] h-[18px]" /> Videos
               </TabsTrigger>
-              <TabsTrigger value="saved" className="rounded-xl text-[11px] px-0.5 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Bookmark className="w-4.5 h-4.5" /> Saved
+              <TabsTrigger value="live" className="rounded-xl text-[11px] px-1 py-1 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium">
+                <Radio className="w-[18px] h-[18px]" /> Live
               </TabsTrigger>
-              <TabsTrigger value="live" className="rounded-xl text-[11px] px-0.5 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Radio className="w-4.5 h-4.5" /> Live
+              <TabsTrigger value="quizzes" className="rounded-xl text-[11px] px-1 py-1 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium">
+                <ClipboardCheck className="w-[18px] h-[18px]" /> Quizzes
               </TabsTrigger>
-              <TabsTrigger value="posts" className="rounded-xl text-[11px] px-0.5 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Megaphone className="w-4.5 h-4.5" /> Posts
+              <TabsTrigger value="posts" className="rounded-xl text-[11px] px-1 py-1 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium">
+                <Megaphone className="w-[18px] h-[18px]" /> Posts
               </TabsTrigger>
-              <TabsTrigger value="quizzes" className="rounded-xl text-[11px] px-0.5 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <ClipboardCheck className="w-4.5 h-4.5" /> Quizzes
+            </TabsList>
+
+            {/* Row 2: Secondary tabs */}
+            <TabsList className="w-full grid grid-cols-3 h-10 rounded-xl bg-secondary/50 p-1">
+              <TabsTrigger value="saved" className="rounded-lg text-[11px] px-1 py-1 flex items-center justify-center gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium">
+                <Bookmark className="w-4 h-4" /> Saved
               </TabsTrigger>
-              <TabsTrigger value="polls" className="rounded-xl text-[11px] px-0.5 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <BarChart3 className="w-4.5 h-4.5" /> Polls
+              <TabsTrigger value="polls" className="rounded-lg text-[11px] px-1 py-1 flex items-center justify-center gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium">
+                <BarChart3 className="w-4 h-4" /> Polls
+              </TabsTrigger>
+              <TabsTrigger value="progress" className="rounded-lg text-[11px] px-1 py-1 flex items-center justify-center gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm font-medium">
+                <Trophy className="w-4 h-4" /> Progress
               </TabsTrigger>
             </TabsList>
 
