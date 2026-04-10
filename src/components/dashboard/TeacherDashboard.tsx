@@ -23,7 +23,7 @@ import CreatePollForm from "./CreatePollForm";
 import PollsSection from "./PollsSection";
 import CreateQuizForm from "./CreateQuizForm";
 import QuizzesSection from "./QuizzesSection";
-import AssignmentsSection from "./AssignmentsSection";
+
 
 interface Student {
   id: string;
@@ -276,7 +276,7 @@ const TeacherDashboard = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-3">
-          <TabsList className="w-full grid grid-cols-7 h-auto">
+          <TabsList className="w-full grid grid-cols-6 h-auto">
             <TabsTrigger value="overview" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
               <TrendingUp className="w-4 h-4" /> Overview
             </TabsTrigger>
@@ -294,9 +294,6 @@ const TeacherDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="quizzes" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
               <ClipboardCheck className="w-4 h-4" /> Quizzes
-            </TabsTrigger>
-            <TabsTrigger value="homework" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
-              <BookOpen className="w-4 h-4" /> HW
             </TabsTrigger>
           </TabsList>
 
