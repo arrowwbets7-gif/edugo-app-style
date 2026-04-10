@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import NotificationBell from "./NotificationBell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import {
   Copy, CheckCircle2, Clock, LogOut, Home, Play, ShieldCheck, User, Search, Megaphone, Radio,
-  ClipboardCheck, BookOpen, BarChart3, Flame, Trophy, Target, TrendingUp
+  ClipboardCheck, BarChart3, Flame, Trophy, Target, TrendingUp
 } from "lucide-react";
 import { toast } from "sonner";
 import CustomVideoPlayer from "./CustomVideoPlayer";
@@ -18,7 +19,7 @@ import PostsSection from "./PostsSection";
 import LiveStreamSection from "./LiveStreamSection";
 import PollsSection from "./PollsSection";
 import QuizzesSection from "./QuizzesSection";
-import AssignmentsSection from "./AssignmentsSection";
+
 
 interface Video {
   id: string;
