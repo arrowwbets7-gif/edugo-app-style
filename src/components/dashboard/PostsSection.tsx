@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  Megaphone, MessageSquare, BookOpen, Send, Trash2, ChevronDown, ChevronUp, User
+  Megaphone, MessageSquare, BookOpen, Send, Trash2, ChevronDown, ChevronUp, User,
+  FileText, ImageIcon, ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,6 +19,8 @@ interface Post {
   type: "announcement" | "discussion" | "note";
   class_filter: string;
   subject: string;
+  attachment_url: string | null;
+  attachment_type: string | null;
   created_at: string;
 }
 
@@ -28,7 +30,6 @@ interface Reply {
   user_id: string;
   content: string;
   created_at: string;
-  author_name?: string;
 }
 
 const typeConfig = {
@@ -38,40 +39,27 @@ const typeConfig = {
 };
 
 const PostsSection = ({ isTeacher = false }: { isTeacher?: boolean }) => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [expandedPost, setExpandedPost] = useState<string | null>(null);
   const [replies, setReplies] = useState<Record<string, Reply[]>>({});
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [profiles, setProfiles] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
+  useEffect(() => { fetchPosts(); }, []);
 
   const fetchPosts = async () => {
-    const { data } = await supabase
-      .from("posts")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { data } = await supabase.from("posts").select("*").order("created_at", { ascending: false });
     if (data) setPosts(data as Post[]);
   };
 
   const fetchReplies = async (postId: string) => {
-    const { data } = await supabase
-      .from("post_replies")
-      .select("*")
-      .eq("post_id", postId)
-      .order("created_at", { ascending: true });
+    const { data } = await supabase.from("post_replies").select("*").eq("post_id", postId).order("created_at", { ascending: true });
     if (data) {
-      // Fetch author names for replies
       const userIds = [...new Set(data.map((r) => r.user_id))];
       const unknownIds = userIds.filter((id) => !profiles[id]);
       if (unknownIds.length > 0) {
-        const { data: profs } = await supabase
-          .from("profiles")
-          .select("user_id, full_name")
-          .in("user_id", unknownIds);
+        const { data: profs } = await supabase.from("profiles").select("user_id, full_name").in("user_id", unknownIds);
         if (profs) {
           const newProfiles = { ...profiles };
           profs.forEach((p) => { newProfiles[p.user_id] = p.full_name; });
@@ -83,22 +71,14 @@ const PostsSection = ({ isTeacher = false }: { isTeacher?: boolean }) => {
   };
 
   const toggleExpand = (postId: string) => {
-    if (expandedPost === postId) {
-      setExpandedPost(null);
-    } else {
-      setExpandedPost(postId);
-      if (!replies[postId]) fetchReplies(postId);
-    }
+    if (expandedPost === postId) { setExpandedPost(null); }
+    else { setExpandedPost(postId); if (!replies[postId]) fetchReplies(postId); }
   };
 
   const sendReply = async (postId: string) => {
     const text = replyText[postId]?.trim();
     if (!text || !user) return;
-    const { error } = await supabase.from("post_replies").insert({
-      post_id: postId,
-      user_id: user.id,
-      content: text,
-    });
+    const { error } = await supabase.from("post_replies").insert({ post_id: postId, user_id: user.id, content: text });
     if (error) { toast.error("Failed to send reply"); return; }
     setReplyText((prev) => ({ ...prev, [postId]: "" }));
     fetchReplies(postId);
@@ -110,15 +90,11 @@ const PostsSection = ({ isTeacher = false }: { isTeacher?: boolean }) => {
     else { toast.success("Post deleted"); fetchPosts(); }
   };
 
-  const getAuthorName = (userId: string) => profiles[userId] || "Unknown";
-
   return (
     <div className="space-y-3">
       {posts.length === 0 ? (
         <Card className="border-border/50">
-          <CardContent className="pt-6 text-center text-muted-foreground">
-            No posts yet
-          </CardContent>
+          <CardContent className="pt-6 text-center text-muted-foreground">No posts yet</CardContent>
         </Card>
       ) : (
         posts.map((post) => {
@@ -135,12 +111,8 @@ const PostsSection = ({ isTeacher = false }: { isTeacher?: boolean }) => {
                     <Badge className={`${config.color} text-xs`}>
                       <Icon className="w-3 h-3 mr-1" /> {config.label}
                     </Badge>
-                    {post.subject && (
-                      <Badge variant="outline" className="text-xs">{post.subject}</Badge>
-                    )}
-                    {post.class_filter && (
-                      <Badge variant="secondary" className="text-xs">{post.class_filter}</Badge>
-                    )}
+                    {post.subject && <Badge variant="outline" className="text-xs">{post.subject}</Badge>}
+                    {post.class_filter && <Badge variant="secondary" className="text-xs">{post.class_filter}</Badge>}
                   </div>
                   {isTeacher && (
                     <Button variant="ghost" size="icon" onClick={() => deletePost(post.id)} className="text-red-400 hover:text-red-600 h-8 w-8">
@@ -150,19 +122,32 @@ const PostsSection = ({ isTeacher = false }: { isTeacher?: boolean }) => {
                 </div>
                 <h4 className="font-semibold mb-1">{post.title}</h4>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{post.content}</p>
+
+                {/* Attachment */}
+                {post.attachment_url && (
+                  <div className="mt-3">
+                    {post.attachment_type === "image" ? (
+                      <img src={post.attachment_url} alt="Attachment" className="rounded-lg max-h-60 w-auto border border-border/50" />
+                    ) : (
+                      <a href={post.attachment_url} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 p-2.5 border border-border/50 rounded-lg hover:bg-muted/50 transition-colors">
+                        <FileText className="w-5 h-5 text-red-500" />
+                        <span className="text-sm font-medium flex-1">View PDF</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                      </a>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mt-3">
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(post.created_at).toLocaleDateString()}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{new Date(post.created_at).toLocaleDateString()}</p>
                   {post.type === "discussion" && (
                     <Button variant="ghost" size="sm" onClick={() => toggleExpand(post.id)} className="text-xs h-7 gap-1">
-                      {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                      Replies
+                      {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />} Replies
                     </Button>
                   )}
                 </div>
 
-                {/* Replies section */}
                 {isExpanded && post.type === "discussion" && (
                   <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
                     {postReplies.map((reply) => (
@@ -171,9 +156,7 @@ const PostsSection = ({ isTeacher = false }: { isTeacher?: boolean }) => {
                           <User className="w-3 h-3 text-muted-foreground" />
                         </div>
                         <div>
-                          <span className="font-medium text-xs">
-                            {reply.user_id === user?.id ? "You" : getAuthorName(reply.user_id)}
-                          </span>
+                          <span className="font-medium text-xs">{reply.user_id === user?.id ? "You" : (profiles[reply.user_id] || "Unknown")}</span>
                           <p className="text-muted-foreground">{reply.content}</p>
                         </div>
                       </div>
