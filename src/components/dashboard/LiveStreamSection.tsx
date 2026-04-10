@@ -60,6 +60,7 @@ const LiveStreamSection = ({ isTeacher = false }: LiveStreamSectionProps) => {
   const [title, setTitle] = useState("");
   const [ytUrl, setYtUrl] = useState("");
   const [subject, setSubject] = useState("");
+  const [classFilter, setClassFilter] = useState("");
   const [saving, setSaving] = useState(false);
   const [attendanceCount, setAttendanceCount] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -151,12 +152,12 @@ const LiveStreamSection = ({ isTeacher = false }: LiveStreamSectionProps) => {
     setSaving(true);
     const { error } = await supabase.from("live_streams").insert({
       title: title.trim(), youtube_url: ytUrl.trim(), youtube_id: ytId,
-      subject: subject.trim(), started_by: user!.id, status: "live",
+      subject: subject.trim(), class_filter: classFilter.trim(), started_by: user!.id, status: "live",
     });
     if (error) toast.error("Failed to create stream");
     else {
       toast.success("Live stream started!");
-      setTitle(""); setYtUrl(""); setSubject(""); setShowCreate(false); fetchStreams();
+      setTitle(""); setYtUrl(""); setSubject(""); setClassFilter(""); setShowCreate(false); fetchStreams();
     }
     setSaving(false);
   };
@@ -299,6 +300,10 @@ const LiveStreamSection = ({ isTeacher = false }: LiveStreamSectionProps) => {
               <div className="space-y-2">
                 <Label className="text-xs">Subject</Label>
                 <Input placeholder="e.g. Math" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={50} className="h-9" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Class / Board</Label>
+                <Input placeholder="e.g. Class 10 CBSE" value={classFilter} onChange={(e) => setClassFilter(e.target.value)} maxLength={50} className="h-9" />
               </div>
               <div className="space-y-2">
                 <Label className="text-xs">YouTube Live URL *</Label>
