@@ -41,8 +41,7 @@ const Signup = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Account created! Please sign in.");
-      navigate("/login");
+      navigate("/signup-success");
     }
   };
 
