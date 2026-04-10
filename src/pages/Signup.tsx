@@ -41,7 +41,14 @@ const Signup = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      navigate("/signup-success");
+      // Auto sign-in after signup since email confirmation is disabled
+      const { error: signInError } = await signIn(email.trim(), password);
+      if (signInError) {
+        toast.error(signInError.message);
+      } else {
+        toast.success("Account created! Share your code with your teacher.");
+        navigate("/dashboard");
+      }
     }
   };
 
