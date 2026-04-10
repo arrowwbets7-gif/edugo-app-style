@@ -274,20 +274,15 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
         </div>
       </div>
 
-      {/* Video */}
+      {/* Video - using YT IFrame API like CustomVideoPlayer */}
       <div
         className="relative w-full aspect-video rounded-lg overflow-hidden bg-black select-none"
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
       >
-        <iframe
-          src={`https://www.youtube.com/embed/${stream.youtube_id}?autoplay=1&modestbranding=1&rel=0&controls=0&disablekb=1&fs=0&iv_load_policy=3&showinfo=0&cc_load_policy=0&origin=${encodeURIComponent(window.location.origin)}`}
-          className="w-full h-full pointer-events-none"
-          allow="autoplay; encrypted-media"
-          allowFullScreen={false}
-          referrerPolicy="no-referrer"
-          style={{ border: 'none' }}
-        />
+        <div style={{ pointerEvents: "none" }} className="w-full h-full">
+          <div id={playerContainerId} className="w-full h-full" />
+        </div>
         <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-black/60 to-transparent z-10" />
         <div className="absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-black/60 to-transparent z-10" />
         <div className="absolute inset-0 z-20" />
