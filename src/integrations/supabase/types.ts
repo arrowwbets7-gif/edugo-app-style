@@ -147,6 +147,45 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_goals: {
+        Row: {
+          created_at: string
+          goal_date: string
+          id: string
+          is_completed: boolean
+          quizzes_completed: number
+          target_quizzes: number
+          target_videos: number
+          updated_at: string
+          user_id: string
+          videos_watched: number
+        }
+        Insert: {
+          created_at?: string
+          goal_date?: string
+          id?: string
+          is_completed?: boolean
+          quizzes_completed?: number
+          target_quizzes?: number
+          target_videos?: number
+          updated_at?: string
+          user_id: string
+          videos_watched?: number
+        }
+        Update: {
+          created_at?: string
+          goal_date?: string
+          id?: string
+          is_completed?: boolean
+          quizzes_completed?: number
+          target_quizzes?: number
+          target_videos?: number
+          updated_at?: string
+          user_id?: string
+          videos_watched?: number
+        }
+        Relationships: []
+      }
       live_chat_messages: {
         Row: {
           created_at: string
@@ -678,6 +717,30 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      video_watch_history: {
+        Row: {
+          id: string
+          user_id: string
+          video_id: string
+          watch_duration_seconds: number
+          watched_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          video_id: string
+          watch_duration_seconds?: number
+          watched_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          video_id?: string
+          watch_duration_seconds?: number
+          watched_at?: string
         }
         Relationships: []
       }
