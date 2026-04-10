@@ -392,34 +392,67 @@ const TeacherDashboard = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Video File *</Label>
+                      <Label>Video File * <span className="text-xs text-muted-foreground">(Max 50MB)</span></Label>
                       <Input
                         type="file"
                         accept="video/*"
                         onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
                         required
+                        disabled={uploading}
                       />
+                      {videoFile && (
+                        <p className={`text-xs ${videoFile.size > MAX_VIDEO_SIZE ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                          {(videoFile.size / 1024 / 1024).toFixed(1)} MB {videoFile.size > MAX_VIDEO_SIZE ? '— Too large!' : ''}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
-                      <Label>Thumbnail</Label>
+                      <Label>Thumbnail <span className="text-xs text-muted-foreground">(Max 5MB)</span></Label>
                       <Input
                         type="file"
                         accept="image/*"
                         onChange={handleThumbnailChange}
+                        disabled={uploading}
                       />
                       {thumbnailPreview && (
                         <img src={thumbnailPreview} alt="Thumbnail preview" className="w-32 h-20 object-cover rounded-lg mt-2" />
                       )}
                     </div>
+
+                    {/* Upload Progress */}
+                    {uploading && (
+                      <div className="space-y-2 animate-fade-in">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground font-medium">
+                            {uploadStage === "video" && "Uploading video..."}
+                            {uploadStage === "thumbnail" && "Uploading thumbnail..."}
+                            {uploadStage === "saving" && "Saving..."}
+                          </span>
+                          <span className="font-bold text-primary">{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-accent to-primary rounded-full transition-all duration-300 ease-out"
+                            style={{ width: `${uploadProgress}%` }}
+                          />
+                        </div>
+                        {uploadStage === "video" && videoFile && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            {((videoFile.size * uploadProgress) / 100 / 1024 / 1024).toFixed(1)} / {(videoFile.size / 1024 / 1024).toFixed(1)} MB
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     <div className="flex gap-2">
                       <Button type="submit" disabled={uploading} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
                         {uploading ? (
-                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading...</>
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading {uploadProgress}%</>
                         ) : (
                           <><Upload className="w-4 h-4 mr-2" /> Upload</>
                         )}
                       </Button>
-                      <Button type="button" variant="outline" onClick={() => setShowUpload(false)}>Cancel</Button>
+                      <Button type="button" variant="outline" onClick={() => setShowUpload(false)} disabled={uploading}>Cancel</Button>
                     </div>
                   </form>
                 </CardContent>
