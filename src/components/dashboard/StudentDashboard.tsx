@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import NotificationBell from "./NotificationBell";
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Link } from "react-router-dom";
 import {
   Copy, CheckCircle2, Clock, LogOut, Home, Play, ShieldCheck, User, Search, Megaphone, Radio,
-  ClipboardCheck, BarChart3, Flame, Trophy, Target, TrendingUp
+  ClipboardCheck, BarChart3, Flame, Trophy, Target, TrendingUp, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import CustomVideoPlayer from "./CustomVideoPlayer";
@@ -19,7 +19,6 @@ import PostsSection from "./PostsSection";
 import LiveStreamSection from "./LiveStreamSection";
 import PollsSection from "./PollsSection";
 import QuizzesSection from "./QuizzesSection";
-
 
 interface Video {
   id: string;
@@ -100,7 +99,7 @@ const StudentDashboard = () => {
     if (!user) return;
     const today = new Date().toISOString().split("T")[0];
     const { data } = await supabase.from("streaks").select("*").eq("user_id", user.id).maybeSingle();
-    
+
     if (!data) {
       await supabase.from("streaks").insert({ user_id: user.id, current_streak: 1, longest_streak: 1, last_active_date: today });
       setStreak({ current: 1, longest: 1, avatar: "default" });
@@ -120,12 +119,12 @@ const StudentDashboard = () => {
     let newStreak = lastDate === yesterdayStr ? data.current_streak + 1 : 1;
     let newLongest = Math.max(newStreak, data.longest_streak);
     let avatar = data.avatar_reward || "default";
-    
-    if (newStreak >= 30) avatar = "🏆";
-    else if (newStreak >= 21) avatar = "💎";
-    else if (newStreak >= 14) avatar = "🌟";
-    else if (newStreak >= 7) avatar = "🔥";
-    else if (newStreak >= 3) avatar = "⭐";
+
+    if (newStreak >= 30) avatar = "gold";
+    else if (newStreak >= 21) avatar = "diamond";
+    else if (newStreak >= 14) avatar = "star";
+    else if (newStreak >= 7) avatar = "fire";
+    else if (newStreak >= 3) avatar = "spark";
 
     await supabase.from("streaks").update({
       current_streak: newStreak,
@@ -153,92 +152,81 @@ const StudentDashboard = () => {
     return matchesSearch && matchesSubject;
   });
 
+  const streakIcon = streak.current >= 7 ? <Flame className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />;
+
   return (
     <div className="min-h-screen bg-background">
       {playingVideo && (
         <CustomVideoPlayer youtubeId={playingVideo.id} title={playingVideo.title} onClose={() => setPlayingVideo(null)} />
       )}
 
-      <header className="sticky top-0 z-50 bg-primary/95 backdrop-blur-lg border-b border-primary-foreground/10">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-primary backdrop-blur-lg">
+        <div className="px-4 py-3 flex items-center justify-between max-w-2xl mx-auto">
           <Link to="/" className="text-lg font-extrabold font-heading text-primary-foreground">
             EduGo<span className="text-accent">Classes</span>
           </Link>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <NotificationBell />
             {streak.current > 0 && (
-              <Badge className="bg-accent/20 text-accent border-accent/30 text-xs gap-1">
-                <Flame className="h-3 w-3" /> {streak.current}d
-              </Badge>
+              <div className="flex items-center gap-1 bg-primary-foreground/10 rounded-full px-2.5 py-1">
+                <Flame className="h-3.5 w-3.5 text-accent" />
+                <span className="text-xs font-bold text-primary-foreground">{streak.current}</span>
+              </div>
             )}
             <Link to="/">
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-primary-foreground/70 hover:text-primary-foreground">
-                <Home className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-foreground/60 hover:text-primary-foreground">
+                <Home className="h-4 w-4" />
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" onClick={signOut} className="h-9 w-9 text-primary-foreground/70 hover:text-primary-foreground">
-              <LogOut className="h-5 w-5" />
+            <Button variant="ghost" size="icon" onClick={signOut} className="h-8 w-8 text-primary-foreground/60 hover:text-primary-foreground">
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-4 max-w-2xl space-y-4">
-        {/* Profile Card */}
-        <Card className="border-border/50">
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl">
-                {streak.avatar !== "default" ? streak.avatar : <User className="w-6 h-6 text-primary" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold truncate">{profile?.full_name}</h3>
-                <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-muted-foreground">{profile?.class || "N/A"}</span>
-                  {profile?.is_verified ? (
-                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px] h-5">
-                      <ShieldCheck className="w-3 h-3 mr-0.5" /> Verified
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="text-[10px] h-5">
-                      <Clock className="w-3 h-3 mr-0.5" /> Pending
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              {streak.current >= 3 && (
-                <div className="text-center">
-                  <Flame className="w-6 h-6 text-accent mx-auto" />
-                  <p className="text-[10px] font-bold">{streak.current}🔥</p>
-                </div>
+      <main className="px-4 py-4 max-w-2xl mx-auto space-y-4">
+        {/* Profile Card - Minimal */}
+        <div className="flex items-center gap-3 animate-fade-in">
+          <div className="w-11 h-11 rounded-2xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+            <User className="w-5 h-5 text-accent" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-sm truncate">{profile?.full_name}</h3>
+              {profile?.is_verified ? (
+                <ShieldCheck className="w-4 h-4 text-accent flex-shrink-0" />
+              ) : (
+                <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               )}
             </div>
-          </CardContent>
-        </Card>
+            <p className="text-xs text-muted-foreground truncate">{profile?.class || "N/A"}</p>
+          </div>
+        </div>
 
-        {/* Quick Stats for verified students */}
+        {/* Quick Stats */}
         {profile?.is_verified && (quizStats.attempted > 0 || attendanceCount > 0) && (
-          <div className="grid grid-cols-3 gap-2">
-            <Card className="border-border/50">
-              <CardContent className="pt-2.5 pb-2 text-center">
-                <Trophy className="w-4 h-4 text-accent mx-auto mb-0.5" />
-                <p className="text-sm font-bold">{quizStats.bestScore}%</p>
-                <p className="text-[9px] text-muted-foreground">Best Score</p>
+          <div className="grid grid-cols-3 gap-2 animate-fade-in">
+            <Card className="border-0 bg-accent/5">
+              <CardContent className="pt-3 pb-2.5 text-center">
+                <Trophy className="w-4 h-4 text-accent mx-auto mb-1" />
+                <p className="text-base font-bold">{quizStats.bestScore}%</p>
+                <p className="text-[10px] text-muted-foreground">Best</p>
               </CardContent>
             </Card>
-            <Card className="border-border/50">
-              <CardContent className="pt-2.5 pb-2 text-center">
-                <Target className="w-4 h-4 text-primary mx-auto mb-0.5" />
-                <p className="text-sm font-bold">{quizStats.avgScore}%</p>
-                <p className="text-[9px] text-muted-foreground">Avg Score</p>
+            <Card className="border-0 bg-primary/5">
+              <CardContent className="pt-3 pb-2.5 text-center">
+                <Target className="w-4 h-4 text-primary mx-auto mb-1" />
+                <p className="text-base font-bold">{quizStats.avgScore}%</p>
+                <p className="text-[10px] text-muted-foreground">Average</p>
               </CardContent>
             </Card>
-            <Card className="border-border/50">
-              <CardContent className="pt-2.5 pb-2 text-center">
-                <TrendingUp className="w-4 h-4 text-green-600 mx-auto mb-0.5" />
-                <p className="text-sm font-bold">{attendanceCount}</p>
-                <p className="text-[9px] text-muted-foreground">Classes Attended</p>
+            <Card className="border-0 bg-accent/5">
+              <CardContent className="pt-3 pb-2.5 text-center">
+                <TrendingUp className="w-4 h-4 text-accent mx-auto mb-1" />
+                <p className="text-base font-bold">{attendanceCount}</p>
+                <p className="text-[10px] text-muted-foreground">Classes</p>
               </CardContent>
             </Card>
           </div>
@@ -246,40 +234,47 @@ const StudentDashboard = () => {
 
         {/* Verification Code */}
         {!profile?.is_verified && (
-          <Card className="border-accent/20 bg-accent/5">
-            <CardContent className="pt-4 pb-4 space-y-3">
+          <Card className="border-0 bg-gradient-to-br from-accent/10 via-accent/5 to-transparent animate-fade-in overflow-hidden">
+            <CardContent className="pt-5 pb-5 space-y-4">
               <div className="text-center">
-                <h3 className="font-bold mb-1">Your Verification Code</h3>
-                <p className="text-xs text-muted-foreground mb-3">Share with your teacher to get verified</p>
-                <div className="flex items-center justify-center gap-2">
-                  <code className="text-2xl font-mono font-bold tracking-[0.3em] bg-card px-4 py-2 rounded-xl border">{profile?.verification_code}</code>
-                  <Button variant="outline" size="icon" className="h-10 w-10" onClick={copyCode}>
-                    {copied ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                  </Button>
+                <div className="w-10 h-10 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-3">
+                  <ShieldCheck className="w-5 h-5 text-accent" />
                 </div>
+                <h3 className="font-bold text-sm">Your Verification Code</h3>
+                <p className="text-xs text-muted-foreground mt-1">Share this code with your teacher</p>
               </div>
-              <Button variant="outline" size="sm" className="w-full" onClick={refreshProfile}>Check Status</Button>
+              <div className="flex items-center justify-center gap-2">
+                <code className="text-2xl font-mono font-bold tracking-[0.3em] bg-card px-5 py-2.5 rounded-2xl border border-border/50 shadow-sm">
+                  {profile?.verification_code}
+                </code>
+                <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl" onClick={copyCode}>
+                  {copied ? <CheckCircle2 className="w-4 h-4 text-accent" /> : <Copy className="w-4 h-4" />}
+                </Button>
+              </div>
+              <Button variant="outline" size="sm" className="w-full rounded-xl h-9" onClick={refreshProfile}>
+                <Clock className="w-3.5 h-3.5 mr-1.5" /> Check Verification Status
+              </Button>
             </CardContent>
           </Card>
         )}
 
         {/* Content tabs */}
         {profile?.is_verified ? (
-          <Tabs defaultValue="videos" className="space-y-3">
-            <TabsList className="w-full grid grid-cols-5 h-auto">
-              <TabsTrigger value="videos" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
+          <Tabs defaultValue="videos" className="space-y-3 animate-fade-in">
+            <TabsList className="w-full grid grid-cols-5 h-11 rounded-2xl bg-secondary/80 p-1">
+              <TabsTrigger value="videos" className="rounded-xl text-[10px] px-1 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <Play className="w-4 h-4" /> Videos
               </TabsTrigger>
-              <TabsTrigger value="live" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
+              <TabsTrigger value="live" className="rounded-xl text-[10px] px-1 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <Radio className="w-4 h-4" /> Live
               </TabsTrigger>
-              <TabsTrigger value="posts" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
+              <TabsTrigger value="posts" className="rounded-xl text-[10px] px-1 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <Megaphone className="w-4 h-4" /> Posts
               </TabsTrigger>
-              <TabsTrigger value="quizzes" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
+              <TabsTrigger value="quizzes" className="rounded-xl text-[10px] px-1 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <ClipboardCheck className="w-4 h-4" /> Quizzes
               </TabsTrigger>
-              <TabsTrigger value="polls" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
+              <TabsTrigger value="polls" className="rounded-xl text-[10px] px-1 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <BarChart3 className="w-4 h-4" /> Polls
               </TabsTrigger>
             </TabsList>
@@ -287,12 +282,19 @@ const StudentDashboard = () => {
             <TabsContent value="videos" className="space-y-3">
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-9" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+                  <Input
+                    placeholder="Search videos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-10 rounded-xl bg-secondary/50 border-border/30"
+                  />
                 </div>
                 {subjects.length > 0 && (
                   <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-                    <SelectTrigger className="w-28 h-9"><SelectValue placeholder="Subject" /></SelectTrigger>
+                    <SelectTrigger className="w-28 h-10 rounded-xl bg-secondary/50 border-border/30">
+                      <SelectValue placeholder="Subject" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All</SelectItem>
                       {subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -302,35 +304,43 @@ const StudentDashboard = () => {
               </div>
 
               {filteredVideos.length === 0 ? (
-                <Card className="border-border/50">
-                  <CardContent className="pt-6 text-center text-muted-foreground text-sm">
-                    {videos.length === 0 ? "No videos yet." : "No match."}
-                  </CardContent>
-                </Card>
+                <div className="text-center py-12">
+                  <Play className="w-10 h-10 text-muted-foreground/20 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    {videos.length === 0 ? "No videos yet" : "No results found"}
+                  </p>
+                </div>
               ) : (
                 <div className="grid gap-3">
                   {filteredVideos.map((video) => {
                     const ytId = extractYouTubeId(video.video_url);
                     const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : video.thumbnail_url;
                     return (
-                      <Card key={video.id} className="border-border/50 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                      <Card
+                        key={video.id}
+                        className="border-0 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.98]"
                         onClick={() => ytId && setPlayingVideo({ id: ytId, title: video.title })}
-                        onContextMenu={(e) => e.preventDefault()}>
+                        onContextMenu={(e) => e.preventDefault()}
+                      >
                         <div className="relative">
                           {thumb && (
-                            <div className="relative w-full aspect-video bg-muted">
+                            <div className="relative w-full aspect-video bg-muted rounded-t-xl overflow-hidden">
                               <img src={thumb} alt={video.title} className="w-full h-full object-cover select-none pointer-events-none" draggable={false} />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                <div className="w-14 h-14 rounded-full bg-primary/80 flex items-center justify-center shadow-lg backdrop-blur-sm">
-                                  <Play className="w-7 h-7 text-primary-foreground ml-1" fill="currentColor" />
+                              <div className="absolute inset-0 flex items-center justify-center bg-primary/10">
+                                <div className="w-12 h-12 rounded-full bg-card/90 flex items-center justify-center shadow-lg backdrop-blur-sm">
+                                  <Play className="w-5 h-5 text-accent ml-0.5" fill="currentColor" />
                                 </div>
                               </div>
                             </div>
                           )}
                           <div className="p-3">
                             <div className="flex items-start justify-between gap-2">
-                              <h3 className="font-semibold text-sm">{video.title}</h3>
-                              {video.subject && <Badge variant="outline" className="text-[10px] flex-shrink-0">{video.subject}</Badge>}
+                              <h3 className="font-semibold text-sm leading-snug">{video.title}</h3>
+                              {video.subject && (
+                                <Badge variant="outline" className="text-[10px] flex-shrink-0 rounded-lg border-border/50">
+                                  {video.subject}
+                                </Badge>
+                              )}
                             </div>
                             {video.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{video.description}</p>}
                           </div>
@@ -354,18 +364,15 @@ const StudentDashboard = () => {
               <QuizzesSection />
             </TabsContent>
 
-
             <TabsContent value="polls">
               <PollsSection />
             </TabsContent>
           </Tabs>
         ) : (
-          <Card className="border-border/50">
-            <CardContent className="pt-6 text-center">
-              <Play className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">Content available after verification</p>
-            </CardContent>
-          </Card>
+          <div className="text-center py-12 animate-fade-in">
+            <Play className="w-10 h-10 text-muted-foreground/20 mx-auto mb-3" />
+            <p className="text-muted-foreground text-sm">Content available after verification</p>
+          </div>
         )}
       </main>
     </div>

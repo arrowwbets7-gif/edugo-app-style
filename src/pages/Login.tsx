@@ -4,8 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { LogIn, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 const Login = () => {
@@ -34,77 +33,84 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link to="/" className="text-2xl font-extrabold font-heading text-primary">
-            EduGo<span className="text-accent">Classes</span>
-          </Link>
-          <p className="text-muted-foreground mt-2 text-sm">Welcome back! Sign in to continue</p>
-        </div>
+    <div className="min-h-screen bg-primary flex flex-col">
+      {/* Top decorative area */}
+      <div className="flex-shrink-0 px-6 pt-12 pb-8">
+        <Link to="/" className="text-xl font-extrabold font-heading text-primary-foreground">
+          EduGo<span className="text-accent">Classes</span>
+        </Link>
+        <h1 className="text-3xl font-bold font-heading text-primary-foreground mt-8 leading-tight">
+          Welcome<br />back
+        </h1>
+        <p className="text-primary-foreground/60 text-sm mt-2">Sign in to continue learning</p>
+      </div>
 
-        <Card className="border-border/50 shadow-xl">
-          <CardHeader className="text-center pb-4">
-            <div className="mx-auto w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-              <LogIn className="w-6 h-6 text-primary" />
+      {/* Form card */}
+      <div className="flex-1 bg-background rounded-t-[2rem] px-6 pt-8 pb-8 animate-fade-in">
+        <form onSubmit={handleSubmit} className="space-y-5 max-w-md mx-auto">
+          <div className="space-y-1.5">
+            <Label htmlFor="email" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-11 h-12 rounded-xl bg-secondary/50 border-border/30 focus:bg-card transition-colors"
+                required
+              />
             </div>
-            <CardTitle className="text-xl">Sign In</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="password" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-11 pr-11 h-12 rounded-xl bg-secondary/50 border-border/30 focus:bg-card transition-colors"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
 
-              <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                {loading ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
+          <Button
+            type="submit"
+            className="w-full h-12 rounded-xl text-sm font-semibold bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg shadow-accent/20"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" />
+                Signing in...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                Sign In <ArrowRight className="w-4 h-4" />
+              </span>
+            )}
+          </Button>
+        </form>
 
-            <p className="text-center text-sm text-muted-foreground mt-6">
-              Don't have an account?{" "}
-              <Link to="/signup" className="text-accent font-semibold hover:underline">
-                Sign Up
-              </Link>
-            </p>
-          </CardContent>
-        </Card>
+        <p className="text-center text-sm text-muted-foreground mt-8">
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-accent font-semibold hover:underline">
+            Sign Up
+          </Link>
+        </p>
       </div>
     </div>
   );
