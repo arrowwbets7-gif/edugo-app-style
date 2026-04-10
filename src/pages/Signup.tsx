@@ -22,7 +22,7 @@ const Signup = () => {
   const [studentClass, setStudentClass] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, signIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,7 +41,14 @@ const Signup = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      navigate("/signup-success");
+      // Auto sign-in after signup since email confirmation is disabled
+      const { error: signInError } = await signIn(email.trim(), password);
+      if (signInError) {
+        toast.error(signInError.message);
+      } else {
+        toast.success("Account created! Share your code with your teacher.");
+        navigate("/dashboard");
+      }
     }
   };
 
