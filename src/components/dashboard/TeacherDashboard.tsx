@@ -64,6 +64,7 @@ const TeacherDashboard = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
