@@ -285,11 +285,18 @@ const TeacherDashboard = () => {
           </TabsContent>
 
           <TabsContent value="videos" className="space-y-4">
-            {!showUpload ? (
-              <Button onClick={() => setShowUpload(true)} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Plus className="w-4 h-4 mr-2" /> Add YouTube Video
+            <div className="flex gap-2">
+              {!showUpload && (
+                <Button onClick={() => setShowUpload(true)} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Plus className="w-4 h-4 mr-2" /> Add Video
+                </Button>
+              )}
+              <Button onClick={handleSyncYouTube} disabled={syncing} variant="outline" className="gap-2">
+                <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "Syncing..." : "Sync Channel"}
               </Button>
-            ) : (
+            </div>
+            {showUpload && (
               <Card className="border-accent/20">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
