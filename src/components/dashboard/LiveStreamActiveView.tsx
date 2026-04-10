@@ -143,12 +143,8 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
     if (data) setLiveQuizzes(data);
   };
 
-  const startQuizAttempt = async (quiz: any) => {
-    const { data: questions } = await supabase.from("quiz_questions").select("*").eq("quiz_id", quiz.id).order("sort_order");
-    if (questions) {
-      setQuizQuestions(questions);
-      setActiveQuiz(quiz);
-    }
+  const startQuizAttempt = (quiz: any) => {
+    setActiveQuiz(quiz);
   };
 
   const fetchRankings = async (quizId: string, quizTitle: string) => {
