@@ -13,10 +13,12 @@ import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import CoachingChoiceModal from "@/components/CoachingChoiceModal";
 
 const Index = () => {
   return (
     <div className="min-h-screen scroll-smooth">
+      <CoachingChoiceModal />
       <Header />
       <HeroSection />
       <CoachingSection />
