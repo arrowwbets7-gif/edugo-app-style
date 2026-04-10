@@ -61,6 +61,15 @@ const StudentDashboard = () => {
       fetchVideos();
       updateStreak();
       fetchStudentStats();
+
+      const videoChannel = supabase
+        .channel("videos-realtime")
+        .on("postgres_changes", {
+          event: "*", schema: "public", table: "videos",
+        }, () => fetchVideos())
+        .subscribe();
+
+      return () => { supabase.removeChannel(videoChannel); };
     }
   }, [profile?.is_verified]);
 

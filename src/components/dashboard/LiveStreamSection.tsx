@@ -51,7 +51,18 @@ const LiveStreamSection = ({ isTeacher = false }: LiveStreamSectionProps) => {
   const [classFilter, setClassFilter] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetchStreams(); }, []);
+  useEffect(() => {
+    fetchStreams();
+
+    const channel = supabase
+      .channel("live-streams-realtime")
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "live_streams",
+      }, () => fetchStreams())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const fetchStreams = async () => {
     const { data } = await supabase.from("live_streams").select("*").order("created_at", { ascending: false });
