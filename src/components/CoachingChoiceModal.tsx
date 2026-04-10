@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { X, Monitor, MapPin, Phone, GraduationCap } from "lucide-react";
+import { X, Monitor, MapPin, Phone, GraduationCap, ArrowRight } from "lucide-react";
 
 const COACHING_CHOICE_KEY = "edugo_coaching_choice_shown";
 
@@ -14,7 +13,10 @@ const CoachingChoiceModal = () => {
 
   useEffect(() => {
     const shown = sessionStorage.getItem(COACHING_CHOICE_KEY);
-    if (!shown) setVisible(true);
+    if (!shown) {
+      const timer = setTimeout(() => setVisible(true), 1500);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   useEffect(() => {
@@ -32,14 +34,6 @@ const CoachingChoiceModal = () => {
     setVisible(false);
   };
 
-  const handleOnline = () => {
-    setChoice("online");
-  };
-
-  const handleOffline = () => {
-    setChoice("offline");
-  };
-
   const goToSignup = () => {
     sessionStorage.setItem(COACHING_CHOICE_KEY, "true");
     navigate("/signup");
@@ -48,121 +42,118 @@ const CoachingChoiceModal = () => {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <Card className="w-full max-w-md border-accent/30 shadow-2xl relative overflow-hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-[100] px-4 pb-4 animate-in slide-in-from-bottom-8 duration-500">
+      <div className="max-w-lg mx-auto rounded-2xl border border-border/60 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden">
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-2 right-2 z-10 text-muted-foreground hover:text-foreground"
+          className="absolute top-2 right-2 z-10 h-7 w-7 text-muted-foreground hover:text-foreground"
           onClick={handleClose}
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </Button>
 
-        <CardContent className="pt-8 pb-6 px-6">
-          {!choice ? (
-            <div className="text-center space-y-6">
-              <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto">
-                <GraduationCap className="w-8 h-8 text-accent" />
+        {!choice ? (
+          <div className="p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                <GraduationCap className="w-5 h-5 text-accent" />
               </div>
               <div>
-                <h2 className="text-xl font-bold font-heading">Welcome to EduGo Classes!</h2>
-                <p className="text-sm text-muted-foreground mt-2">How would you like to learn?</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={handleOnline}
-                  className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-border hover:border-accent hover:bg-accent/5 transition-all duration-300 group"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
-                    <Monitor className="w-6 h-6 text-primary group-hover:text-accent transition-colors" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm">Online</p>
-                    <p className="text-[10px] text-muted-foreground">Learn from anywhere</p>
-                  </div>
-                </button>
-                <button
-                  onClick={handleOffline}
-                  className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-border hover:border-accent hover:bg-accent/5 transition-all duration-300 group"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-accent/10 transition-colors">
-                    <MapPin className="w-6 h-6 text-primary group-hover:text-accent transition-colors" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm">Offline</p>
-                    <p className="text-[10px] text-muted-foreground">Visit our center</p>
-                  </div>
-                </button>
+                <h2 className="text-sm font-bold font-heading">Welcome to EduGo Classes!</h2>
+                <p className="text-xs text-muted-foreground">How would you like to learn?</p>
               </div>
             </div>
-          ) : choice === "online" ? (
-            <div className="text-center space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <Monitor className="w-8 h-8 text-primary" />
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setChoice("online")}
+                className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-accent hover:bg-accent/5 transition-all group text-left"
+              >
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-accent/10 transition-colors flex-shrink-0">
+                  <Monitor className="w-4 h-4 text-primary group-hover:text-accent transition-colors" />
+                </div>
+                <div>
+                  <p className="font-semibold text-xs">Online</p>
+                  <p className="text-[10px] text-muted-foreground">Learn from home</p>
+                </div>
+              </button>
+              <button
+                onClick={() => setChoice("offline")}
+                className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-accent hover:bg-accent/5 transition-all group text-left"
+              >
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-accent/10 transition-colors flex-shrink-0">
+                  <MapPin className="w-4 h-4 text-primary group-hover:text-accent transition-colors" />
+                </div>
+                <div>
+                  <p className="font-semibold text-xs">Offline</p>
+                  <p className="text-[10px] text-muted-foreground">Visit our center</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        ) : choice === "online" ? (
+          <div className="p-5 animate-in fade-in duration-300">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Monitor className="w-5 h-5 text-primary" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold">Online Coaching</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Sign up and contact our teacher to get verified and access all study materials.
-                </p>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold">Online Coaching</h3>
+                <p className="text-[10px] text-muted-foreground">Sign up & contact teacher to get verified</p>
               </div>
-              <Button onClick={goToSignup} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold">
-                Sign Up Now
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={goToSignup} size="sm" className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground text-xs">
+                Sign Up <ArrowRight className="w-3 h-3 ml-1" />
               </Button>
               <a
                 href="https://wa.me/919477408004?text=Hi%20EduGoClasses,%20I%20want%20to%20join%20online%20coaching."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Phone className="w-4 h-4" /> Contact: 94774 08004
+                <Button variant="outline" size="sm" className="text-xs gap-1">
+                  <Phone className="w-3 h-3" /> Call
+                </Button>
               </a>
-              <p className="text-xs text-muted-foreground">Redirecting in {countdown}s...</p>
             </div>
-          ) : (
-            <div className="text-center space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                <MapPin className="w-8 h-8 text-primary" />
+            <p className="text-[10px] text-muted-foreground text-center mt-2">Closing in {countdown}s</p>
+          </div>
+        ) : (
+          <div className="p-5 animate-in fade-in duration-300">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-primary" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold">Offline Coaching</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Visit our coaching center for in-person classes. Contact us for more details!
-                </p>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold">Offline Coaching</h3>
+                <p className="text-[10px] text-muted-foreground">Visit our center for in-person classes</p>
               </div>
+            </div>
+            <div className="flex gap-2">
               <a
                 href="https://maps.app.goo.gl/SeUgEj9H6KqZGqPd9"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full"
+                className="flex-1"
               >
-                <div className="relative rounded-xl overflow-hidden border border-border h-40">
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3684.0!2d88.3!3d22.5!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjLCsDMwJzAwLjAiTiA4OMKwMTgnMDAuMCJF!5e0!3m2!1sen!2sin!4v1234567890"
-                    className="w-full h-full border-0 pointer-events-none"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end justify-center pb-3">
-                    <span className="text-sm font-semibold flex items-center gap-1.5 bg-accent/90 text-accent-foreground px-4 py-1.5 rounded-full">
-                      <MapPin className="w-3.5 h-3.5" /> View on Google Maps
-                    </span>
-                  </div>
-                </div>
+                <Button variant="outline" size="sm" className="w-full text-xs gap-1">
+                  <MapPin className="w-3 h-3" /> Get Directions
+                </Button>
               </a>
               <a
                 href="https://wa.me/919477408004?text=Hi%20EduGoClasses,%20I%20want%20to%20know%20about%20offline%20coaching."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 text-sm font-medium text-accent hover:underline"
               >
-                <Phone className="w-4 h-4" /> Contact: 94774 08004
+                <Button variant="outline" size="sm" className="text-xs gap-1">
+                  <Phone className="w-3 h-3" /> Call
+                </Button>
               </a>
-              <p className="text-xs text-muted-foreground">Closing in {countdown}s...</p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <p className="text-[10px] text-muted-foreground text-center mt-2">Closing in {countdown}s</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

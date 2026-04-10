@@ -9,8 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import {
-  Copy, CheckCircle2, Clock, LogOut, Home, Play, GraduationCap, ShieldCheck, User, Search, Megaphone, Radio,
-  ClipboardCheck, BookOpen, BarChart3, Flame
+  Copy, CheckCircle2, Clock, LogOut, Home, Play, ShieldCheck, User, Search, Megaphone, Radio,
+  ClipboardCheck, BookOpen, BarChart3, Flame, Trophy, Target, TrendingUp
 } from "lucide-react";
 import { toast } from "sonner";
 import CustomVideoPlayer from "./CustomVideoPlayer";
@@ -52,17 +52,38 @@ const StudentDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("all");
   const [streak, setStreak] = useState({ current: 0, longest: 0, avatar: "default" });
+  const [quizStats, setQuizStats] = useState({ attempted: 0, avgScore: 0, bestScore: 0 });
+  const [attendanceCount, setAttendanceCount] = useState(0);
 
   useEffect(() => {
     if (profile?.is_verified) {
       fetchVideos();
       updateStreak();
+      fetchStudentStats();
     }
   }, [profile?.is_verified]);
 
   const fetchVideos = async () => {
     const { data } = await supabase.from("videos").select("*").order("created_at", { ascending: false });
     if (data) setVideos(data as Video[]);
+  };
+
+  const fetchStudentStats = async () => {
+    if (!user) return;
+    const [attRes, quizRes] = await Promise.all([
+      supabase.from("attendance").select("*", { count: "exact", head: true }).eq("student_id", user.id),
+      supabase.from("quiz_attempts").select("score, total_marks").eq("student_id", user.id),
+    ]);
+    setAttendanceCount(attRes.count || 0);
+
+    if (quizRes.data && quizRes.data.length > 0) {
+      const scores = quizRes.data.map((a: any) => Math.round((a.score / a.total_marks) * 100));
+      setQuizStats({
+        attempted: quizRes.data.length,
+        avgScore: Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length),
+        bestScore: Math.max(...scores),
+      });
+    }
   };
 
   const updateStreak = async () => {
@@ -90,7 +111,6 @@ const StudentDashboard = () => {
     let newLongest = Math.max(newStreak, data.longest_streak);
     let avatar = data.avatar_reward || "default";
     
-    // Reward avatars based on streak
     if (newStreak >= 30) avatar = "🏆";
     else if (newStreak >= 21) avatar = "💎";
     else if (newStreak >= 14) avatar = "🌟";
@@ -185,6 +205,33 @@ const StudentDashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Quick Stats for verified students */}
+        {profile?.is_verified && (quizStats.attempted > 0 || attendanceCount > 0) && (
+          <div className="grid grid-cols-3 gap-2">
+            <Card className="border-border/50">
+              <CardContent className="pt-2.5 pb-2 text-center">
+                <Trophy className="w-4 h-4 text-accent mx-auto mb-0.5" />
+                <p className="text-sm font-bold">{quizStats.bestScore}%</p>
+                <p className="text-[9px] text-muted-foreground">Best Score</p>
+              </CardContent>
+            </Card>
+            <Card className="border-border/50">
+              <CardContent className="pt-2.5 pb-2 text-center">
+                <Target className="w-4 h-4 text-primary mx-auto mb-0.5" />
+                <p className="text-sm font-bold">{quizStats.avgScore}%</p>
+                <p className="text-[9px] text-muted-foreground">Avg Score</p>
+              </CardContent>
+            </Card>
+            <Card className="border-border/50">
+              <CardContent className="pt-2.5 pb-2 text-center">
+                <TrendingUp className="w-4 h-4 text-green-600 mx-auto mb-0.5" />
+                <p className="text-sm font-bold">{attendanceCount}</p>
+                <p className="text-[9px] text-muted-foreground">Classes Attended</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Verification Code */}
         {!profile?.is_verified && (
