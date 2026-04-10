@@ -77,7 +77,6 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
   const [livePolls, setLivePolls] = useState<any[]>([]);
   const [liveQuizzes, setLiveQuizzes] = useState<any[]>([]);
   const [activeQuiz, setActiveQuiz] = useState<any>(null);
-  const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
   const [showRanking, setShowRanking] = useState(false);
   const [rankings, setRankings] = useState<any[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
