@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      post_replies: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_replies_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          attachment_url: string | null
+          author_id: string
+          class_filter: string | null
+          content: string
+          created_at: string
+          id: string
+          subject: string | null
+          title: string
+          type: Database["public"]["Enums"]["post_type"]
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          author_id: string
+          class_filter?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          subject?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["post_type"]
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          author_id?: string
+          class_filter?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          subject?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["post_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           class: string
@@ -73,6 +144,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          subject: string | null
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -83,6 +155,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          subject?: string | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -93,6 +166,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          subject?: string | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
@@ -116,6 +190,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "teacher" | "student"
+      post_type: "announcement" | "discussion" | "note"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -244,6 +319,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "teacher", "student"],
+      post_type: ["announcement", "discussion", "note"],
     },
   },
 } as const
