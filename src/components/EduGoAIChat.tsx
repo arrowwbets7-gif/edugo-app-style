@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, X, Send, ImagePlus, Loader2, GraduationCap, Trash2 } from "lucide-react";
+import { X, Send, ImagePlus, Loader2, GraduationCap, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 type Msg = { role: "user" | "assistant"; content: string; imageUrl?: string };
@@ -18,16 +18,66 @@ const EduGoAIChat = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Drag state for the floating button
+  const [btnPos, setBtnPos] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragStartRef = useRef<{ x: number; y: number; bx: number; by: number } | null>(null);
+  const didDragRef = useRef(false);
+
+  // Drag state for the chat box
+  const [boxOffset, setBoxOffset] = useState({ x: 0, y: 0 });
+  const boxDragRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
+  const [boxDragging, setBoxDragging] = useState(false);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, open]);
 
+  // --- Button drag handlers ---
+  const onBtnPointerDown = useCallback((e: React.PointerEvent) => {
+    dragStartRef.current = { x: e.clientX, y: e.clientY, bx: btnPos.x, by: btnPos.y };
+    didDragRef.current = false;
+    setDragging(true);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, [btnPos]);
+
+  const onBtnPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragStartRef.current) return;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDragRef.current = true;
+    setBtnPos({ x: dragStartRef.current.bx + dx, y: dragStartRef.current.by + dy });
+  }, []);
+
+  const onBtnPointerUp = useCallback(() => {
+    dragStartRef.current = null;
+    setDragging(false);
+    if (!didDragRef.current) setOpen((o) => !o);
+  }, []);
+
+  // --- Chat box drag handlers (header only) ---
+  const onBoxPointerDown = useCallback((e: React.PointerEvent) => {
+    boxDragRef.current = { x: e.clientX, y: e.clientY, ox: boxOffset.x, oy: boxOffset.y };
+    setBoxDragging(true);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, [boxOffset]);
+
+  const onBoxPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!boxDragRef.current) return;
+    const dx = e.clientX - boxDragRef.current.x;
+    const dy = e.clientY - boxDragRef.current.y;
+    setBoxOffset({ x: boxDragRef.current.ox + dx, y: boxDragRef.current.oy + dy });
+  }, []);
+
+  const onBoxPointerUp = useCallback(() => {
+    boxDragRef.current = null;
+    setBoxDragging(false);
+  }, []);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      return;
-    }
+    if (file.size > 5 * 1024 * 1024) return;
     const reader = new FileReader();
     reader.onload = () => setImagePreview(reader.result as string);
     reader.readAsDataURL(file);
@@ -50,7 +100,6 @@ const EduGoAIChat = () => {
     setImagePreview(null);
     setIsLoading(true);
 
-    // Build API messages - include image as multimodal content
     const apiMessages = newMessages.map((m) => {
       if (m.imageUrl) {
         return {
@@ -107,14 +156,11 @@ const EduGoAIChat = () => {
         while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
           let line = textBuffer.slice(0, newlineIndex);
           textBuffer = textBuffer.slice(newlineIndex + 1);
-
           if (line.endsWith("\r")) line = line.slice(0, -1);
           if (line.startsWith(":") || line.trim() === "") continue;
           if (!line.startsWith("data: ")) continue;
-
           const jsonStr = line.slice(6).trim();
           if (jsonStr === "[DONE]") { streamDone = true; break; }
-
           try {
             const parsed = JSON.parse(jsonStr);
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
@@ -126,7 +172,6 @@ const EduGoAIChat = () => {
         }
       }
 
-      // Final flush
       if (textBuffer.trim()) {
         for (let raw of textBuffer.split("\n")) {
           if (!raw) continue;
@@ -146,7 +191,7 @@ const EduGoAIChat = () => {
       if (!assistantSoFar) {
         upsertAssistant("I couldn't generate a response. Please try again.");
       }
-    } catch (e) {
+    } catch {
       upsertAssistant("Connection error. Please check your internet and try again.");
     } finally {
       setIsLoading(false);
@@ -161,32 +206,49 @@ const EduGoAIChat = () => {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Floating draggable button */}
       <button
-        onClick={() => setOpen(!open)}
-        className={`fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${
+        onPointerDown={onBtnPointerDown}
+        onPointerMove={onBtnPointerMove}
+        onPointerUp={onBtnPointerUp}
+        style={{
+          transform: `translate(${btnPos.x}px, ${btnPos.y}px)`,
+          touchAction: "none",
+        }}
+        className={`fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors duration-200 select-none ${
           open
             ? "bg-muted text-muted-foreground scale-90"
             : "bg-primary text-primary-foreground hover:scale-110"
-        }`}
+        } ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
         aria-label="Open EduGoAI Tutor"
       >
         {open ? <X className="w-6 h-6" /> : <GraduationCap className="w-7 h-7" />}
       </button>
 
-      {/* Chat box */}
+      {/* Draggable chat box */}
       {open && (
-        <div className="fixed bottom-36 right-4 z-50 w-[340px] max-w-[calc(100vw-2rem)] h-[480px] max-h-[calc(100vh-12rem)] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300">
-          {/* Header */}
-          <div className="bg-primary px-4 py-3 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <GraduationCap className="w-5 h-5 text-primary-foreground" />
-              <div>
-                <h3 className="text-sm font-bold text-primary-foreground">EduGoAI</h3>
-                <p className="text-[10px] text-primary-foreground/70">Your personal tutor</p>
+        <div
+          style={{
+            transform: `translate(${boxOffset.x}px, ${boxOffset.y}px)`,
+            touchAction: "none",
+          }}
+          className="fixed bottom-36 right-4 z-50 w-[92vw] sm:w-[380px] max-w-[calc(100vw-1rem)] h-[520px] max-h-[calc(100vh-10rem)] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300"
+        >
+          {/* Header – draggable */}
+          <div
+            onPointerDown={onBoxPointerDown}
+            onPointerMove={onBoxPointerMove}
+            onPointerUp={onBoxPointerUp}
+            className={`bg-primary px-4 py-3 flex items-center justify-between flex-shrink-0 select-none ${boxDragging ? "cursor-grabbing" : "cursor-grab"}`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <GraduationCap className="w-5 h-5 text-primary-foreground flex-shrink-0" />
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-primary-foreground truncate">EduGoAI</h3>
+                <p className="text-[10px] text-primary-foreground/70 truncate">Your personal tutor</p>
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               {messages.length > 0 && (
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-primary-foreground/70 hover:text-primary-foreground" onClick={clearChat}>
                   <Trash2 className="w-3.5 h-3.5" />
@@ -202,17 +264,17 @@ const EduGoAIChat = () => {
           <ScrollArea className="flex-1 min-h-0">
             <div className="p-3 space-y-3">
               {messages.length === 0 && (
-                <div className="text-center py-8 px-4">
+                <div className="text-center py-6 px-3">
                   <GraduationCap className="w-10 h-10 mx-auto text-primary/30 mb-3" />
                   <p className="text-sm font-medium text-foreground/80">Hi! I'm EduGoAI</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Ask me any study question or upload an image of a problem. I'm here to help!
+                    Ask me any study question or upload an image of a problem!
                   </p>
                   <div className="mt-4 space-y-1.5">
                     {["Solve: 2x + 5 = 15", "Explain photosynthesis", "What is Newton's 3rd law?"].map((q) => (
                       <button
                         key={q}
-                        onClick={() => { setInput(q); }}
+                        onClick={() => setInput(q)}
                         className="block w-full text-left text-xs px-3 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground/70 transition-colors"
                       >
                         {q}
@@ -225,7 +287,7 @@ const EduGoAIChat = () => {
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                    className={`max-w-[88%] rounded-2xl px-3 py-2 text-sm break-words overflow-hidden ${
                       msg.role === "user"
                         ? "bg-primary text-primary-foreground rounded-br-md"
                         : "bg-muted text-foreground rounded-bl-md"
@@ -235,11 +297,11 @@ const EduGoAIChat = () => {
                       <img src={msg.imageUrl} alt="Uploaded" className="max-w-full rounded-lg mb-2 max-h-32 object-contain" />
                     )}
                     {msg.role === "assistant" ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_pre]:text-xs [&_code]:text-xs">
+                      <div className="prose prose-sm dark:prose-invert max-w-none break-words overflow-x-auto [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_pre]:text-xs [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_code]:text-xs [&_code]:break-all [&_table]:text-xs [&_table]:w-full [&_img]:max-w-full">
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
                       </div>
                     ) : (
-                      <p>{msg.content}</p>
+                      <p className="break-words">{msg.content}</p>
                     )}
                   </div>
                 </div>
@@ -260,9 +322,9 @@ const EduGoAIChat = () => {
           {/* Image preview */}
           {imagePreview && (
             <div className="px-3 py-1.5 border-t border-border/50 flex items-center gap-2 bg-muted/50">
-              <img src={imagePreview} alt="Preview" className="h-10 w-10 rounded object-cover" />
-              <span className="text-xs text-muted-foreground flex-1">Image attached</span>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setImagePreview(null)}>
+              <img src={imagePreview} alt="Preview" className="h-10 w-10 rounded object-cover flex-shrink-0" />
+              <span className="text-xs text-muted-foreground flex-1 truncate">Image attached</span>
+              <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => setImagePreview(null)}>
                 <X className="w-3 h-3" />
               </Button>
             </div>
@@ -285,7 +347,7 @@ const EduGoAIChat = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-              className="h-8 text-sm flex-1"
+              className="h-8 text-sm flex-1 min-w-0"
               disabled={isLoading}
             />
             <Button
