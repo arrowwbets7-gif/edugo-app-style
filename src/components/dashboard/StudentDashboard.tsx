@@ -6,12 +6,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import NotificationBell from "./NotificationBell";
+import ProfileSettings from "./ProfileSettings";
+import { BookmarkButton, VideoNotes, SavedVideosTab } from "./BookmarksNotes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import {
-  Copy, CheckCircle2, Clock, LogOut, Home, Play, ShieldCheck, User, Search, Megaphone, Radio,
-  ClipboardCheck, BarChart3, Flame, Trophy, Target, TrendingUp, Sparkles
+  Copy, CheckCircle2, Clock, LogOut, Home, Play, ShieldCheck, Search, Megaphone, Radio,
+  ClipboardCheck, BarChart3, Flame, Trophy, Target, TrendingUp, Bookmark
 } from "lucide-react";
 import { toast } from "sonner";
 import CustomVideoPlayer from "./CustomVideoPlayer";
@@ -152,7 +154,9 @@ const StudentDashboard = () => {
     return matchesSearch && matchesSubject;
   });
 
-  const streakIcon = streak.current >= 7 ? <Flame className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />;
+  const handlePlayVideo = (id: string, title: string) => {
+    setPlayingVideo({ id, title });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -166,7 +170,7 @@ const StudentDashboard = () => {
           <Link to="/" className="text-lg font-extrabold font-heading text-primary-foreground">
             EduGo<span className="text-accent">Classes</span>
           </Link>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <NotificationBell />
             {streak.current > 0 && (
               <div className="flex items-center gap-1 bg-primary-foreground/10 rounded-full px-2.5 py-1">
@@ -187,11 +191,9 @@ const StudentDashboard = () => {
       </header>
 
       <main className="px-4 py-4 max-w-2xl mx-auto space-y-4">
-        {/* Profile Card - Minimal */}
+        {/* Profile Card - Tap avatar to edit */}
         <div className="flex items-center gap-3 animate-fade-in">
-          <div className="w-11 h-11 rounded-2xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-            <User className="w-5 h-5 text-accent" />
-          </div>
+          <ProfileSettings />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-sm truncate">{profile?.full_name}</h3>
@@ -261,21 +263,24 @@ const StudentDashboard = () => {
         {/* Content tabs */}
         {profile?.is_verified ? (
           <Tabs defaultValue="videos" className="space-y-3 animate-fade-in">
-            <TabsList className="w-full grid grid-cols-5 h-11 rounded-2xl bg-secondary/80 p-1">
-              <TabsTrigger value="videos" className="rounded-xl text-[10px] px-1 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Play className="w-4 h-4" /> Videos
+            <TabsList className="w-full grid grid-cols-6 h-11 rounded-2xl bg-secondary/80 p-1">
+              <TabsTrigger value="videos" className="rounded-xl text-[9px] px-0.5 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Play className="w-3.5 h-3.5" /> Videos
               </TabsTrigger>
-              <TabsTrigger value="live" className="rounded-xl text-[10px] px-1 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Radio className="w-4 h-4" /> Live
+              <TabsTrigger value="saved" className="rounded-xl text-[9px] px-0.5 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Bookmark className="w-3.5 h-3.5" /> Saved
               </TabsTrigger>
-              <TabsTrigger value="posts" className="rounded-xl text-[10px] px-1 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Megaphone className="w-4 h-4" /> Posts
+              <TabsTrigger value="live" className="rounded-xl text-[9px] px-0.5 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Radio className="w-3.5 h-3.5" /> Live
               </TabsTrigger>
-              <TabsTrigger value="quizzes" className="rounded-xl text-[10px] px-1 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <ClipboardCheck className="w-4 h-4" /> Quizzes
+              <TabsTrigger value="posts" className="rounded-xl text-[9px] px-0.5 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Megaphone className="w-3.5 h-3.5" /> Posts
               </TabsTrigger>
-              <TabsTrigger value="polls" className="rounded-xl text-[10px] px-1 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <BarChart3 className="w-4 h-4" /> Polls
+              <TabsTrigger value="quizzes" className="rounded-xl text-[9px] px-0.5 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <ClipboardCheck className="w-3.5 h-3.5" /> Quizzes
+              </TabsTrigger>
+              <TabsTrigger value="polls" className="rounded-xl text-[9px] px-0.5 py-1.5 flex flex-col gap-0.5 data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <BarChart3 className="w-3.5 h-3.5" /> Polls
               </TabsTrigger>
             </TabsList>
 
@@ -319,7 +324,7 @@ const StudentDashboard = () => {
                       <Card
                         key={video.id}
                         className="border-0 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.98]"
-                        onClick={() => ytId && setPlayingVideo({ id: ytId, title: video.title })}
+                        onClick={() => ytId && handlePlayVideo(ytId, video.title)}
                         onContextMenu={(e) => e.preventDefault()}
                       >
                         <div className="relative">
@@ -335,14 +340,20 @@ const StudentDashboard = () => {
                           )}
                           <div className="p-3">
                             <div className="flex items-start justify-between gap-2">
-                              <h3 className="font-semibold text-sm leading-snug">{video.title}</h3>
+                              <h3 className="font-semibold text-sm leading-snug flex-1">{video.title}</h3>
+                              <div className="flex items-center gap-0.5 flex-shrink-0">
+                                <BookmarkButton videoId={video.id} />
+                                <VideoNotes videoId={video.id} videoTitle={video.title} />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
                               {video.subject && (
-                                <Badge variant="outline" className="text-[10px] flex-shrink-0 rounded-lg border-border/50">
+                                <Badge variant="outline" className="text-[10px] rounded-lg border-border/50">
                                   {video.subject}
                                 </Badge>
                               )}
+                              {video.description && <p className="text-xs text-muted-foreground line-clamp-1 flex-1">{video.description}</p>}
                             </div>
-                            {video.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{video.description}</p>}
                           </div>
                         </div>
                       </Card>
@@ -350,6 +361,10 @@ const StudentDashboard = () => {
                   })}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="saved">
+              <SavedVideosTab onPlayVideo={handlePlayVideo} />
             </TabsContent>
 
             <TabsContent value="live">
