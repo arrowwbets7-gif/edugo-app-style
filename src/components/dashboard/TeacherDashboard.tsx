@@ -201,6 +201,12 @@ const TeacherDashboard = () => {
       });
       if (error) throw error;
       toast.success("Video added successfully!");
+      // Notify students
+      await supabase.rpc("notify_all_students", {
+        _type: "new_video",
+        _title: "New Video: " + title.trim(),
+        _message: subject.trim() ? `A new ${subject.trim()} video has been uploaded.` : "A new video has been uploaded.",
+      });
       setTitle(""); setDescription(""); setVideoUrl(""); setSubject("");
       setShowUpload(false);
       fetchVideos();
