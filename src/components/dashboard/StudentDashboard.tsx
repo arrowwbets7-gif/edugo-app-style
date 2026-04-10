@@ -396,8 +396,9 @@ const StudentDashboard = () => {
               <QuizzesSection />
             </TabsContent>
 
-            <TabsContent value="polls">
-              <PollsSection />
+
+            <TabsContent value="progress">
+              <ProgressLeaderboard />
             </TabsContent>
           </Tabs>
         ) : (
