@@ -119,33 +119,39 @@ const TeacherDashboard = () => {
       return;
     }
 
+    if (videoFile.size > MAX_VIDEO_SIZE) {
+      toast.error(`Video must be under ${MAX_VIDEO_SIZE / 1024 / 1024}MB. Yours is ${(videoFile.size / 1024 / 1024).toFixed(1)}MB`);
+      return;
+    }
+    if (thumbnailFile && thumbnailFile.size > MAX_THUMB_SIZE) {
+      toast.error(`Thumbnail must be under ${MAX_THUMB_SIZE / 1024 / 1024}MB`);
+      return;
+    }
+
     setUploading(true);
+    setUploadProgress(0);
+    setUploadStage("video");
     try {
       const timestamp = Date.now();
       const videoPath = `${timestamp}_${videoFile.name}`;
 
-      // Upload video
-      const { error: videoError } = await supabase.storage
-        .from("videos")
-        .upload(videoPath, videoFile);
-      if (videoError) throw videoError;
-
-      const { data: videoUrlData } = supabase.storage.from("videos").getPublicUrl(videoPath);
-      const videoUrl = videoUrlData.publicUrl;
+      // Upload video with progress via XHR
+      const videoUrl = await uploadWithProgress("videos", videoPath, videoFile, (p) => setUploadProgress(p));
 
       // Upload thumbnail
       let thumbnailUrl = "";
       if (thumbnailFile) {
+        setUploadStage("thumbnail");
+        setUploadProgress(0);
         const thumbPath = `${timestamp}_${thumbnailFile.name}`;
-        const { error: thumbError } = await supabase.storage
-          .from("thumbnails")
-          .upload(thumbPath, thumbnailFile);
-        if (thumbError) throw thumbError;
+        await uploadWithProgress("thumbnails", thumbPath, thumbnailFile, (p) => setUploadProgress(p));
         const { data: thumbUrlData } = supabase.storage.from("thumbnails").getPublicUrl(thumbPath);
         thumbnailUrl = thumbUrlData.publicUrl;
       }
 
       // Insert video record
+      setUploadStage("saving");
+      setUploadProgress(100);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -170,7 +176,37 @@ const TeacherDashboard = () => {
       toast.error(error.message || "Upload failed");
     } finally {
       setUploading(false);
+      setUploadProgress(0);
+      setUploadStage(null);
     }
+  };
+
+  const uploadWithProgress = (bucket: string, path: string, file: File, onProgress: (pct: number) => void): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", url);
+      xhr.setRequestHeader("Authorization", `Bearer ${(supabase as any).auth['headers']?.['Authorization'] || ''}`);
+      xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+      xhr.setRequestHeader("x-upsert", "false");
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+          resolve(data.publicUrl);
+        } else {
+          reject(new Error(`Upload failed: ${xhr.statusText}`));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Upload failed"));
+      xhr.send(file);
+    });
   };
 
   const deleteVideo = async (video: VideoItem) => {
