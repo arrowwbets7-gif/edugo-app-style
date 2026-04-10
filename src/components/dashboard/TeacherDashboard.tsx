@@ -41,7 +41,12 @@ const TeacherDashboard = () => {
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [searchCode, setSearchCode] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState<"video" | "thumbnail" | "saving" | null>(null);
   const [showUpload, setShowUpload] = useState(false);
+
+  const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+  const MAX_THUMB_SIZE = 5 * 1024 * 1024; // 5MB
 
   // Upload form
   const [title, setTitle] = useState("");
