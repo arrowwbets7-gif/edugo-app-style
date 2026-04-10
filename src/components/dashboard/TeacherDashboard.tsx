@@ -12,7 +12,7 @@ import { Link } from "react-router-dom";
 import {
   LogOut, Home, Users, Video, CheckCircle2, XCircle,
   Search, Trash2, Plus, ShieldCheck, Clock, GraduationCap, Loader2, LinkIcon, Megaphone,
-  Radio, Sparkles
+  Radio, Sparkles, RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
 import PostsSection from "./PostsSection";
@@ -64,7 +64,8 @@ const TeacherDashboard = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
-  
+  const [syncing, setSyncing] = useState(false);
+
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -272,11 +273,35 @@ const TeacherDashboard = () => {
           </TabsContent>
 
           <TabsContent value="videos" className="space-y-4">
-            {!showUpload ? (
-              <Button onClick={() => setShowUpload(true)} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Plus className="w-4 h-4 mr-2" /> Add YouTube Video
+            <div className="flex gap-2">
+              {!showUpload && (
+                <Button onClick={() => setShowUpload(true)} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Plus className="w-4 h-4 mr-2" /> Add YouTube Video
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  setSyncing(true);
+                  try {
+                    const { data, error } = await supabase.functions.invoke("sync-youtube");
+                    if (error) throw error;
+                    toast.success(data?.message || "Sync complete!");
+                    fetchVideos();
+                  } catch (err: any) {
+                    toast.error(err.message || "Sync failed");
+                  } finally {
+                    setSyncing(false);
+                  }
+                }}
+                disabled={syncing}
+                className={showUpload ? "w-full" : ""}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "Syncing..." : "Sync Channel"}
               </Button>
-            ) : (
+            </div>
+            {showUpload && (
               <Card className="border-accent/20">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
