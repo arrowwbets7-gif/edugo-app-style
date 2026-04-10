@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import StudentDashboard from "@/components/dashboard/StudentDashboard";
 import TeacherDashboard from "@/components/dashboard/TeacherDashboard";
+import EduGoAIChat from "@/components/EduGoAIChat";
 import { Loader2 } from "lucide-react";
 
 const Dashboard = () => {
@@ -21,7 +22,12 @@ const Dashboard = () => {
     return <TeacherDashboard />;
   }
 
-  return <StudentDashboard />;
+  return (
+    <>
+      <StudentDashboard />
+      <EduGoAIChat />
+    </>
+  );
 };
 
 export default Dashboard;
