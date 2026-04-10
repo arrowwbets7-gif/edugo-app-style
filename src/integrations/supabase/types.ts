@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      live_chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_pinned: boolean
+          message: string
+          stream_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          message: string
+          stream_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          message?: string
+          stream_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_chat_messages_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "live_streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_streams: {
+        Row: {
+          class_filter: string | null
+          created_at: string
+          id: string
+          scheduled_at: string | null
+          started_by: string
+          status: string
+          subject: string | null
+          title: string
+          updated_at: string
+          youtube_id: string
+          youtube_url: string
+        }
+        Insert: {
+          class_filter?: string | null
+          created_at?: string
+          id?: string
+          scheduled_at?: string | null
+          started_by: string
+          status?: string
+          subject?: string | null
+          title: string
+          updated_at?: string
+          youtube_id: string
+          youtube_url: string
+        }
+        Update: {
+          class_filter?: string | null
+          created_at?: string
+          id?: string
+          scheduled_at?: string | null
+          started_by?: string
+          status?: string
+          subject?: string | null
+          title?: string
+          updated_at?: string
+          youtube_id?: string
+          youtube_url?: string
+        }
+        Relationships: []
+      }
       post_replies: {
         Row: {
           content: string
@@ -48,6 +125,7 @@ export type Database = {
       }
       posts: {
         Row: {
+          attachment_type: string | null
           attachment_url: string | null
           author_id: string
           class_filter: string | null
@@ -60,6 +138,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attachment_type?: string | null
           attachment_url?: string | null
           author_id: string
           class_filter?: string | null
@@ -72,6 +151,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attachment_type?: string | null
           attachment_url?: string | null
           author_id?: string
           class_filter?: string | null
