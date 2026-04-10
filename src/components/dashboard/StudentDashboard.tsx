@@ -3,12 +3,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import {
-  Copy, CheckCircle2, Clock, LogOut, Home, Play, GraduationCap, ShieldCheck, User, X
+  Copy, CheckCircle2, Clock, LogOut, Home, Play, GraduationCap, ShieldCheck, User, Search, Megaphone
 } from "lucide-react";
 import { toast } from "sonner";
+import CustomVideoPlayer from "./CustomVideoPlayer";
+import PostsSection from "./PostsSection";
 
 interface Video {
   id: string;
@@ -16,6 +21,7 @@ interface Video {
   description: string | null;
   video_url: string;
   thumbnail_url: string | null;
+  subject: string;
   created_at: string;
 }
 
@@ -37,7 +43,9 @@ const StudentDashboard = () => {
   const { user, profile, role, signOut, refreshProfile } = useAuth();
   const [videos, setVideos] = useState<Video[]>([]);
   const [copied, setCopied] = useState(false);
-  const [playingVideo, setPlayingVideo] = useState<string | null>(null);
+  const [playingVideo, setPlayingVideo] = useState<{ id: string; title: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("all");
 
   useEffect(() => {
     if (profile?.is_verified) fetchVideos();
@@ -48,7 +56,7 @@ const StudentDashboard = () => {
       .from("videos")
       .select("*")
       .order("created_at", { ascending: false });
-    if (data) setVideos(data);
+    if (data) setVideos(data as Video[]);
   };
 
   const copyCode = () => {
@@ -60,39 +68,27 @@ const StudentDashboard = () => {
     }
   };
 
+  // Get unique subjects for filter
+  const subjects = [...new Set(videos.map((v) => v.subject).filter(Boolean))];
+
+  // Filter videos
+  const filteredVideos = videos.filter((v) => {
+    const matchesSearch = !searchQuery.trim() ||
+      v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (v.description || "").toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSubject = subjectFilter === "all" || v.subject === subjectFilter;
+    return matchesSearch && matchesSubject;
+  });
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Fullscreen Video Player Overlay */}
+      {/* Custom Video Player */}
       {playingVideo && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setPlayingVideo(null)}
-            className="absolute top-4 right-4 text-white/70 hover:text-white z-10"
-          >
-            <X className="w-6 h-6" />
-          </Button>
-          <div className="w-full max-w-4xl aspect-video relative">
-            {/* Invisible overlay to block right-click on iframe */}
-            <div
-              className="absolute inset-0 z-10"
-              onContextMenu={(e) => e.preventDefault()}
-              style={{ pointerEvents: "none" }}
-            />
-            <iframe
-              src={`https://www.youtube.com/embed/${playingVideo}?autoplay=1&rel=0&modestbranding=1&disablekb=0`}
-              title="Video Player"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-              className="w-full h-full rounded-xl"
-              style={{ border: "none" }}
-            />
-          </div>
-        </div>
+        <CustomVideoPlayer
+          youtubeId={playingVideo.id}
+          title={playingVideo.title}
+          onClose={() => setPlayingVideo(null)}
+        />
       )}
 
       <header className="sticky top-0 z-50 bg-primary/95 backdrop-blur-lg border-b border-primary-foreground/10">
@@ -171,66 +167,108 @@ const StudentDashboard = () => {
           </Card>
         )}
 
-        {/* Videos */}
+        {/* Content tabs */}
         {profile?.is_verified ? (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <Play className="w-5 h-5 text-accent" /> Video Lessons
-            </h2>
-            {videos.length === 0 ? (
-              <Card className="border-border/50">
-                <CardContent className="pt-6 text-center text-muted-foreground">
-                  No videos available yet. Check back soon!
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4">
-                {videos.map((video) => {
-                  const ytId = extractYouTubeId(video.video_url);
-                  const thumb = ytId
-                    ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
-                    : video.thumbnail_url;
+          <Tabs defaultValue="videos" className="space-y-4">
+            <TabsList className="w-full grid grid-cols-2">
+              <TabsTrigger value="videos" className="gap-1">
+                <Play className="w-4 h-4" /> Videos
+              </TabsTrigger>
+              <TabsTrigger value="posts" className="gap-1">
+                <Megaphone className="w-4 h-4" /> Posts
+              </TabsTrigger>
+            </TabsList>
 
-                  return (
-                    <Card
-                      key={video.id}
-                      className="border-border/50 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                      onClick={() => ytId && setPlayingVideo(ytId)}
-                      onContextMenu={(e) => e.preventDefault()}
-                    >
-                      <div className="relative">
-                        {thumb && (
-                          <div className="relative w-full aspect-video bg-muted">
-                            <img
-                              src={thumb}
-                              alt={video.title}
-                              className="w-full h-full object-cover select-none pointer-events-none"
-                              draggable={false}
-                            />
-                            {/* Play button overlay */}
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                              <div className="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center shadow-lg">
-                                <Play className="w-7 h-7 text-white ml-1" fill="white" />
+            <TabsContent value="videos" className="space-y-4">
+              {/* Search & Filter */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search videos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                {subjects.length > 0 && (
+                  <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+                    <SelectTrigger className="w-full sm:w-40">
+                      <SelectValue placeholder="Subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Subjects</SelectItem>
+                      {subjects.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              {filteredVideos.length === 0 ? (
+                <Card className="border-border/50">
+                  <CardContent className="pt-6 text-center text-muted-foreground">
+                    {videos.length === 0 ? "No videos available yet." : "No videos match your search."}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4">
+                  {filteredVideos.map((video) => {
+                    const ytId = extractYouTubeId(video.video_url);
+                    const thumb = ytId
+                      ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
+                      : video.thumbnail_url;
+
+                    return (
+                      <Card
+                        key={video.id}
+                        className="border-border/50 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => ytId && setPlayingVideo({ id: ytId, title: video.title })}
+                        onContextMenu={(e) => e.preventDefault()}
+                      >
+                        <div className="relative">
+                          {thumb && (
+                            <div className="relative w-full aspect-video bg-muted">
+                              <img
+                                src={thumb}
+                                alt={video.title}
+                                className="w-full h-full object-cover select-none pointer-events-none"
+                                draggable={false}
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                <div className="w-14 h-14 rounded-full bg-primary/80 flex items-center justify-center shadow-lg backdrop-blur-sm">
+                                  <Play className="w-7 h-7 text-primary-foreground ml-1" fill="currentColor" />
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                        <div className="p-4">
-                          <h3 className="font-semibold mb-1">{video.title}</h3>
-                          {video.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-2">{video.description}</p>
                           )}
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {new Date(video.created_at).toLocaleDateString()}
-                          </p>
+                          <div className="p-4">
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="font-semibold mb-1">{video.title}</h3>
+                              {video.subject && (
+                                <Badge variant="outline" className="text-xs flex-shrink-0">{video.subject}</Badge>
+                              )}
+                            </div>
+                            {video.description && (
+                              <p className="text-sm text-muted-foreground line-clamp-2">{video.description}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {new Date(video.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="posts">
+              <PostsSection />
+            </TabsContent>
+          </Tabs>
         ) : (
           <Card className="border-border/50">
             <CardContent className="pt-6 text-center">
