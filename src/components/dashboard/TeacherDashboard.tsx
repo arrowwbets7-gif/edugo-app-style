@@ -11,9 +11,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import {
   LogOut, Home, Users, Video, CheckCircle2, XCircle,
-  Search, Trash2, Plus, ShieldCheck, Clock, GraduationCap, Loader2, LinkIcon
+  Search, Trash2, Plus, ShieldCheck, Clock, GraduationCap, Loader2, LinkIcon, Megaphone
 } from "lucide-react";
 import { toast } from "sonner";
+import PostsSection from "./PostsSection";
+import CreatePostForm from "./CreatePostForm";
 
 interface Student {
   id: string;
@@ -32,6 +34,7 @@ interface VideoItem {
   description: string | null;
   video_url: string;
   thumbnail_url: string | null;
+  subject: string;
   created_at: string;
 }
 
@@ -56,10 +59,12 @@ const TeacherDashboard = () => {
   const [searchCode, setSearchCode] = useState("");
   const [saving, setSaving] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [showCreatePost, setShowCreatePost] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [subject, setSubject] = useState("");
 
   useEffect(() => {
     fetchStudents();
@@ -79,7 +84,7 @@ const TeacherDashboard = () => {
       .from("videos")
       .select("*")
       .order("created_at", { ascending: false });
-    if (data) setVideos(data);
+    if (data) setVideos(data as VideoItem[]);
   };
 
   const verifyStudent = async (userId: string) => {
@@ -124,6 +129,7 @@ const TeacherDashboard = () => {
         video_url: videoUrl.trim(),
         thumbnail_url: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
         uploaded_by: user.id,
+        subject: subject.trim(),
       });
       if (error) throw error;
 
@@ -131,6 +137,7 @@ const TeacherDashboard = () => {
       setTitle("");
       setDescription("");
       setVideoUrl("");
+      setSubject("");
       setShowUpload(false);
       fetchVideos();
     } catch (error: any) {
@@ -203,12 +210,15 @@ const TeacherDashboard = () => {
         </div>
 
         <Tabs defaultValue="students" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-2">
+          <TabsList className="w-full grid grid-cols-3">
             <TabsTrigger value="students" className="gap-1">
               <Users className="w-4 h-4" /> Students
             </TabsTrigger>
             <TabsTrigger value="videos" className="gap-1">
               <Video className="w-4 h-4" /> Videos
+            </TabsTrigger>
+            <TabsTrigger value="posts" className="gap-1">
+              <Megaphone className="w-4 h-4" /> Posts
             </TabsTrigger>
           </TabsList>
 
@@ -255,7 +265,7 @@ const TeacherDashboard = () => {
                               <XCircle className="w-4 h-4 mr-1" /> Revoke
                             </Button>
                           ) : (
-                            <Button size="sm" onClick={() => verifyStudent(student.user_id)} className="bg-green-600 hover:bg-green-700 text-white">
+                            <Button size="sm" onClick={() => verifyStudent(student.user_id)} className="bg-green-600 hover:bg-green-700 text-primary-foreground">
                               <CheckCircle2 className="w-4 h-4 mr-1" /> Verify
                             </Button>
                           )}
@@ -285,6 +295,10 @@ const TeacherDashboard = () => {
                     <div className="space-y-2">
                       <Label>Title *</Label>
                       <Input placeholder="Video title" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={200} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Subject</Label>
+                      <Input placeholder="e.g. Math, Science, English" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={50} />
                     </div>
                     <div className="space-y-2">
                       <Label>Description</Label>
@@ -342,7 +356,8 @@ const TeacherDashboard = () => {
                         <div className="flex-1 p-4 flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <h4 className="font-semibold truncate">{video.title}</h4>
-                            {video.description && <p className="text-sm text-muted-foreground line-clamp-1">{video.description}</p>}
+                            {video.subject && <Badge variant="outline" className="text-xs mt-1">{video.subject}</Badge>}
+                            {video.description && <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{video.description}</p>}
                             <p className="text-xs text-muted-foreground mt-1">{new Date(video.created_at).toLocaleDateString()}</p>
                           </div>
                           <Button variant="ghost" size="icon" onClick={() => deleteVideo(video)} className="text-red-400 hover:text-red-600 flex-shrink-0">
@@ -355,6 +370,20 @@ const TeacherDashboard = () => {
                 })
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="posts" className="space-y-4">
+            {!showCreatePost ? (
+              <Button onClick={() => setShowCreatePost(true)} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Plus className="w-4 h-4 mr-2" /> Create Post
+              </Button>
+            ) : (
+              <CreatePostForm
+                onCreated={() => { setShowCreatePost(false); }}
+                onCancel={() => setShowCreatePost(false)}
+              />
+            )}
+            <PostsSection isTeacher />
           </TabsContent>
         </Tabs>
       </main>
