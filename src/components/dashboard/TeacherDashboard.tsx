@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import {
-  LogOut, Home, Users, Video, Upload, CheckCircle2, XCircle,
-  Search, Trash2, Plus, ShieldCheck, Clock, GraduationCap, Loader2
+  LogOut, Home, Users, Video, CheckCircle2, XCircle,
+  Search, Trash2, Plus, ShieldCheck, Clock, GraduationCap, Loader2, LinkIcon
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,25 +35,31 @@ interface VideoItem {
   created_at: string;
 }
 
+const extractYouTubeId = (url: string): string | null => {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+    /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+};
+
 const TeacherDashboard = () => {
   const { signOut } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [searchCode, setSearchCode] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadStage, setUploadStage] = useState<"video" | "thumbnail" | "saving" | null>(null);
+  const [saving, setSaving] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
 
-  const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
-  const MAX_THUMB_SIZE = 5 * 1024 * 1024; // 5MB
-
-  // Upload form
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
+  const [videoUrl, setVideoUrl] = useState("");
 
   useEffect(() => {
     fetchStudents();
@@ -81,12 +87,8 @@ const TeacherDashboard = () => {
       .from("profiles")
       .update({ is_verified: true })
       .eq("user_id", userId);
-    if (error) {
-      toast.error("Failed to verify student");
-    } else {
-      toast.success("Student verified!");
-      fetchStudents();
-    }
+    if (error) toast.error("Failed to verify student");
+    else { toast.success("Student verified!"); fetchStudents(); }
   };
 
   const revokeVerification = async (userId: string) => {
@@ -94,133 +96,54 @@ const TeacherDashboard = () => {
       .from("profiles")
       .update({ is_verified: false })
       .eq("user_id", userId);
-    if (error) {
-      toast.error("Failed to revoke verification");
-    } else {
-      toast.success("Verification revoked");
-      fetchStudents();
-    }
+    if (error) toast.error("Failed to revoke verification");
+    else { toast.success("Verification revoked"); fetchStudents(); }
   };
 
-  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setThumbnailFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setThumbnailPreview(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleUploadVideo = async (e: React.FormEvent) => {
+  const handleAddVideo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !videoFile) {
-      toast.error("Title and video file are required");
+    if (!title.trim() || !videoUrl.trim()) {
+      toast.error("Title and YouTube link are required");
       return;
     }
 
-    if (videoFile.size > MAX_VIDEO_SIZE) {
-      toast.error(`Video must be under ${MAX_VIDEO_SIZE / 1024 / 1024}MB. Yours is ${(videoFile.size / 1024 / 1024).toFixed(1)}MB`);
-      return;
-    }
-    if (thumbnailFile && thumbnailFile.size > MAX_THUMB_SIZE) {
-      toast.error(`Thumbnail must be under ${MAX_THUMB_SIZE / 1024 / 1024}MB`);
+    const ytId = extractYouTubeId(videoUrl.trim());
+    if (!ytId) {
+      toast.error("Please enter a valid YouTube link");
       return;
     }
 
-    setUploading(true);
-    setUploadProgress(0);
-    setUploadStage("video");
+    setSaving(true);
     try {
-      const timestamp = Date.now();
-      const videoPath = `${timestamp}_${videoFile.name}`;
-
-      // Upload video with progress via XHR
-      const videoUrl = await uploadWithProgress("videos", videoPath, videoFile, (p) => setUploadProgress(p));
-
-      // Upload thumbnail
-      let thumbnailUrl = "";
-      if (thumbnailFile) {
-        setUploadStage("thumbnail");
-        setUploadProgress(0);
-        const thumbPath = `${timestamp}_${thumbnailFile.name}`;
-        await uploadWithProgress("thumbnails", thumbPath, thumbnailFile, (p) => setUploadProgress(p));
-        const { data: thumbUrlData } = supabase.storage.from("thumbnails").getPublicUrl(thumbPath);
-        thumbnailUrl = thumbUrlData.publicUrl;
-      }
-
-      // Insert video record
-      setUploadStage("saving");
-      setUploadProgress(100);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error: insertError } = await supabase.from("videos").insert({
+      const { error } = await supabase.from("videos").insert({
         title: title.trim(),
         description: description.trim() || null,
-        video_url: videoUrl,
-        thumbnail_url: thumbnailUrl || null,
+        video_url: videoUrl.trim(),
+        thumbnail_url: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
         uploaded_by: user.id,
       });
-      if (insertError) throw insertError;
+      if (error) throw error;
 
-      toast.success("Video uploaded successfully!");
+      toast.success("Video added successfully!");
       setTitle("");
       setDescription("");
-      setVideoFile(null);
-      setThumbnailFile(null);
-      setThumbnailPreview("");
+      setVideoUrl("");
       setShowUpload(false);
       fetchVideos();
     } catch (error: any) {
-      toast.error(error.message || "Upload failed");
+      toast.error(error.message || "Failed to add video");
     } finally {
-      setUploading(false);
-      setUploadProgress(0);
-      setUploadStage(null);
+      setSaving(false);
     }
-  };
-
-  const uploadWithProgress = async (bucket: string, path: string, file: File, onProgress: (pct: number) => void): Promise<string> => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token || "";
-
-    return new Promise((resolve, reject) => {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", url);
-      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-      xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
-      xhr.setRequestHeader("Content-Type", file.type);
-      xhr.setRequestHeader("x-upsert", "false");
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          onProgress(Math.round((e.loaded / e.total) * 100));
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-          resolve(data.publicUrl);
-        } else {
-          reject(new Error(`Upload failed: ${xhr.statusText}`));
-        }
-      };
-      xhr.onerror = () => reject(new Error("Upload failed"));
-      xhr.send(file);
-    });
   };
 
   const deleteVideo = async (video: VideoItem) => {
     const { error } = await supabase.from("videos").delete().eq("id", video.id);
-    if (error) {
-      toast.error("Failed to delete video");
-    } else {
-      toast.success("Video deleted");
-      fetchVideos();
-    }
+    if (error) toast.error("Failed to delete video");
+    else { toast.success("Video deleted"); fetchVideos(); }
   };
 
   const filteredStudents = students.filter((s) => {
@@ -238,7 +161,6 @@ const TeacherDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-primary/95 backdrop-blur-lg border-b border-primary-foreground/10">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="text-lg font-extrabold font-heading text-primary-foreground">
@@ -259,7 +181,6 @@ const TeacherDashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-3xl">
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <Card className="border-border/50">
             <CardContent className="pt-4 pb-3 text-center">
@@ -291,7 +212,6 @@ const TeacherDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Students Tab */}
           <TabsContent value="students" className="space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -302,13 +222,10 @@ const TeacherDashboard = () => {
                 className="pl-10"
               />
             </div>
-
             <div className="space-y-3">
               {filteredStudents.length === 0 ? (
                 <Card className="border-border/50">
-                  <CardContent className="pt-6 text-center text-muted-foreground">
-                    No students found
-                  </CardContent>
+                  <CardContent className="pt-6 text-center text-muted-foreground">No students found</CardContent>
                 </Card>
               ) : (
                 filteredStudents.map((student) => (
@@ -334,20 +251,11 @@ const TeacherDashboard = () => {
                         </div>
                         <div>
                           {student.is_verified ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => revokeVerification(student.user_id)}
-                              className="text-red-500 hover:text-red-600 border-red-200"
-                            >
+                            <Button variant="outline" size="sm" onClick={() => revokeVerification(student.user_id)} className="text-red-500 hover:text-red-600 border-red-200">
                               <XCircle className="w-4 h-4 mr-1" /> Revoke
                             </Button>
                           ) : (
-                            <Button
-                              size="sm"
-                              onClick={() => verifyStudent(student.user_id)}
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                            >
+                            <Button size="sm" onClick={() => verifyStudent(student.user_id)} className="bg-green-600 hover:bg-green-700 text-white">
                               <CheckCircle2 className="w-4 h-4 mr-1" /> Verify
                             </Button>
                           )}
@@ -360,103 +268,54 @@ const TeacherDashboard = () => {
             </div>
           </TabsContent>
 
-          {/* Videos Tab */}
           <TabsContent value="videos" className="space-y-4">
             {!showUpload ? (
               <Button onClick={() => setShowUpload(true)} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Plus className="w-4 h-4 mr-2" /> Upload New Video
+                <Plus className="w-4 h-4 mr-2" /> Add YouTube Video
               </Button>
             ) : (
               <Card className="border-accent/20">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Upload className="w-5 h-5 text-accent" /> Upload Video
+                    <LinkIcon className="w-5 h-5 text-accent" /> Add YouTube Video
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleUploadVideo} className="space-y-4">
+                  <form onSubmit={handleAddVideo} className="space-y-4">
                     <div className="space-y-2">
                       <Label>Title *</Label>
-                      <Input
-                        placeholder="Video title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        required
-                        maxLength={200}
-                      />
+                      <Input placeholder="Video title" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={200} />
                     </div>
                     <div className="space-y-2">
                       <Label>Description</Label>
-                      <Textarea
-                        placeholder="Brief description..."
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        rows={3}
-                        maxLength={1000}
-                      />
+                      <Textarea placeholder="Brief description..." value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={1000} />
                     </div>
                     <div className="space-y-2">
-                      <Label>Video File * <span className="text-xs text-muted-foreground">(Max 50MB)</span></Label>
+                      <Label>YouTube Link * <span className="text-xs text-muted-foreground">(Unlisted or Public)</span></Label>
                       <Input
-                        type="file"
-                        accept="video/*"
-                        onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                        placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                        value={videoUrl}
+                        onChange={(e) => setVideoUrl(e.target.value)}
                         required
-                        disabled={uploading}
                       />
-                      {videoFile && (
-                        <p className={`text-xs ${videoFile.size > MAX_VIDEO_SIZE ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
-                          {(videoFile.size / 1024 / 1024).toFixed(1)} MB {videoFile.size > MAX_VIDEO_SIZE ? '— Too large!' : ''}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Thumbnail <span className="text-xs text-muted-foreground">(Max 5MB)</span></Label>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleThumbnailChange}
-                        disabled={uploading}
-                      />
-                      {thumbnailPreview && (
-                        <img src={thumbnailPreview} alt="Thumbnail preview" className="w-32 h-20 object-cover rounded-lg mt-2" />
-                      )}
-                    </div>
-
-                    {/* Upload Progress */}
-                    {uploading && (
-                      <div className="space-y-2 animate-fade-in">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground font-medium">
-                            {uploadStage === "video" && "Uploading video..."}
-                            {uploadStage === "thumbnail" && "Uploading thumbnail..."}
-                            {uploadStage === "saving" && "Saving..."}
-                          </span>
-                          <span className="font-bold text-primary">{uploadProgress}%</span>
-                        </div>
-                        <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-accent to-primary rounded-full transition-all duration-300 ease-out"
-                            style={{ width: `${uploadProgress}%` }}
+                      {videoUrl && extractYouTubeId(videoUrl) && (
+                        <div className="mt-2 rounded-lg overflow-hidden border border-border/50">
+                          <img
+                            src={`https://img.youtube.com/vi/${extractYouTubeId(videoUrl)}/hqdefault.jpg`}
+                            alt="Video thumbnail"
+                            className="w-full h-auto"
                           />
                         </div>
-                        {uploadStage === "video" && videoFile && (
-                          <p className="text-xs text-muted-foreground text-center">
-                            {((videoFile.size * uploadProgress) / 100 / 1024 / 1024).toFixed(1)} / {(videoFile.size / 1024 / 1024).toFixed(1)} MB
-                          </p>
-                        )}
-                      </div>
-                    )}
-
+                      )}
+                      {videoUrl && !extractYouTubeId(videoUrl) && (
+                        <p className="text-xs text-destructive">Invalid YouTube URL</p>
+                      )}
+                    </div>
                     <div className="flex gap-2">
-                      <Button type="submit" disabled={uploading} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
-                        {uploading ? (
-                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Uploading {uploadProgress}%</>
-                        ) : (
-                          <><Upload className="w-4 h-4 mr-2" /> Upload</>
-                        )}
+                      <Button type="submit" disabled={saving} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
+                        {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : <><Plus className="w-4 h-4 mr-2" /> Add Video</>}
                       </Button>
-                      <Button type="button" variant="outline" onClick={() => setShowUpload(false)} disabled={uploading}>Cancel</Button>
+                      <Button type="button" variant="outline" onClick={() => setShowUpload(false)} disabled={saving}>Cancel</Button>
                     </div>
                   </form>
                 </CardContent>
@@ -466,41 +325,34 @@ const TeacherDashboard = () => {
             <div className="space-y-3">
               {videos.length === 0 ? (
                 <Card className="border-border/50">
-                  <CardContent className="pt-6 text-center text-muted-foreground">
-                    No videos uploaded yet
-                  </CardContent>
+                  <CardContent className="pt-6 text-center text-muted-foreground">No videos added yet</CardContent>
                 </Card>
               ) : (
-                videos.map((video) => (
-                  <Card key={video.id} className="border-border/50 overflow-hidden">
-                    <div className="flex flex-col sm:flex-row">
-                      {video.thumbnail_url && (
-                        <div className="sm:w-40 h-24 sm:h-auto bg-muted flex-shrink-0">
-                          <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
+                videos.map((video) => {
+                  const ytId = extractYouTubeId(video.video_url);
+                  const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : video.thumbnail_url;
+                  return (
+                    <Card key={video.id} className="border-border/50 overflow-hidden">
+                      <div className="flex flex-col sm:flex-row">
+                        {thumb && (
+                          <div className="sm:w-40 h-24 sm:h-auto bg-muted flex-shrink-0">
+                            <img src={thumb} alt={video.title} className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="flex-1 p-4 flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h4 className="font-semibold truncate">{video.title}</h4>
+                            {video.description && <p className="text-sm text-muted-foreground line-clamp-1">{video.description}</p>}
+                            <p className="text-xs text-muted-foreground mt-1">{new Date(video.created_at).toLocaleDateString()}</p>
+                          </div>
+                          <Button variant="ghost" size="icon" onClick={() => deleteVideo(video)} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
-                      )}
-                      <div className="flex-1 p-4 flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <h4 className="font-semibold truncate">{video.title}</h4>
-                          {video.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-1">{video.description}</p>
-                          )}
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(video.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteVideo(video)}
-                          className="text-red-400 hover:text-red-600 flex-shrink-0"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
                       </div>
-                    </div>
-                  </Card>
-                ))
+                    </Card>
+                  );
+                })
               )}
             </div>
           </TabsContent>
