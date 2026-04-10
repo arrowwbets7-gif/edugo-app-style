@@ -161,7 +161,7 @@ const TeacherDashboard = () => {
     }
   };
 
-
+  const deleteVideo = async (video: VideoItem) => {
     const { error } = await supabase.from("videos").delete().eq("id", video.id);
     if (error) toast.error("Failed to delete video");
     else { toast.success("Video deleted"); fetchVideos(); }
