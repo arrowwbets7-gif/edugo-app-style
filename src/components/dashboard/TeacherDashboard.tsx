@@ -147,7 +147,21 @@ const TeacherDashboard = () => {
     }
   };
 
-  const deleteVideo = async (video: VideoItem) => {
+  const handleSyncYouTube = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-youtube");
+      if (error) throw error;
+      toast.success(data?.message || "Sync complete!");
+      fetchVideos();
+    } catch (err: any) {
+      toast.error("Sync failed: " + (err.message || "Unknown error"));
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+
     const { error } = await supabase.from("videos").delete().eq("id", video.id);
     if (error) toast.error("Failed to delete video");
     else { toast.success("Video deleted"); fetchVideos(); }
