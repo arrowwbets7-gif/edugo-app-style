@@ -209,28 +209,35 @@ const StudentDashboard = () => {
           </div>
         </div>
 
+        {/* Daily Goals */}
+        {profile?.is_verified && (
+          <div className="animate-fade-in">
+            <DailyGoals />
+          </div>
+        )}
+
         {/* Quick Stats */}
         {profile?.is_verified && (quizStats.attempted > 0 || attendanceCount > 0) && (
           <div className="grid grid-cols-3 gap-2 animate-fade-in">
             <Card className="border-0 bg-accent/5">
               <CardContent className="pt-3 pb-2.5 text-center">
-                <Trophy className="w-4 h-4 text-accent mx-auto mb-1" />
-                <p className="text-base font-bold">{quizStats.bestScore}%</p>
-                <p className="text-[10px] text-muted-foreground">Best</p>
+                <Trophy className="w-5 h-5 text-accent mx-auto mb-1" />
+                <p className="text-lg font-bold">{quizStats.bestScore}%</p>
+                <p className="text-xs text-muted-foreground">Best</p>
               </CardContent>
             </Card>
             <Card className="border-0 bg-primary/5">
               <CardContent className="pt-3 pb-2.5 text-center">
-                <Target className="w-4 h-4 text-primary mx-auto mb-1" />
-                <p className="text-base font-bold">{quizStats.avgScore}%</p>
-                <p className="text-[10px] text-muted-foreground">Average</p>
+                <Target className="w-5 h-5 text-primary mx-auto mb-1" />
+                <p className="text-lg font-bold">{quizStats.avgScore}%</p>
+                <p className="text-xs text-muted-foreground">Average</p>
               </CardContent>
             </Card>
             <Card className="border-0 bg-accent/5">
               <CardContent className="pt-3 pb-2.5 text-center">
-                <TrendingUp className="w-4 h-4 text-accent mx-auto mb-1" />
-                <p className="text-base font-bold">{attendanceCount}</p>
-                <p className="text-[10px] text-muted-foreground">Classes</p>
+                <TrendingUp className="w-5 h-5 text-accent mx-auto mb-1" />
+                <p className="text-lg font-bold">{attendanceCount}</p>
+                <p className="text-xs text-muted-foreground">Classes</p>
               </CardContent>
             </Card>
           </div>
