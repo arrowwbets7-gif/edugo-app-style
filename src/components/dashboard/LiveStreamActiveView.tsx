@@ -119,6 +119,14 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
     fetchLivePolls();
     fetchLiveQuizzes();
 
+    const channel = supabase
+      .channel(`live-chat-${stream.id}`)
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "live_chat_messages",
+        filter: `stream_id=eq.${stream.id}`,
+      }, () => fetchChat(stream.id))
+      .subscribe();
+
     return () => { supabase.removeChannel(channel); };
   }, [stream.id]);
 
