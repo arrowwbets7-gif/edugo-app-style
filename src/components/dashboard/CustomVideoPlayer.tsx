@@ -175,11 +175,12 @@ const CustomVideoPlayer = ({ youtubeId, title, onClose }: CustomVideoPlayerProps
       ref={containerRef}
       className="fixed inset-0 z-[100] bg-black flex flex-col select-none"
       onMouseMove={handleMouseMove}
+      onTouchStart={handleMouseMove}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Close button */}
-      <div className={`absolute top-4 right-4 z-30 transition-opacity duration-300 ${showControls ? "opacity-100" : "opacity-0"}`}>
-        <Button variant="ghost" size="icon" onClick={onClose} className="text-white/80 hover:text-white hover:bg-white/10">
+      {/* Close button - always visible */}
+      <div className="absolute top-3 right-3 z-40">
+        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-white bg-black/50 hover:bg-black/70 hover:text-white h-11 w-11 rounded-full">
           <X className="w-6 h-6" />
         </Button>
       </div>
