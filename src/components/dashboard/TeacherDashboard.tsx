@@ -12,12 +12,17 @@ import { Link } from "react-router-dom";
 import {
   LogOut, Home, Users, Video, CheckCircle2, XCircle,
   Search, Trash2, Plus, ShieldCheck, Clock, GraduationCap, Loader2, LinkIcon, Megaphone,
-  Radio, Sparkles, RefreshCw
+  Radio, Sparkles, RefreshCw, BarChart3, ClipboardCheck, BookOpen, UserX
 } from "lucide-react";
 import { toast } from "sonner";
 import PostsSection from "./PostsSection";
 import CreatePostForm from "./CreatePostForm";
 import LiveStreamSection from "./LiveStreamSection";
+import CreatePollForm from "./CreatePollForm";
+import PollsSection from "./PollsSection";
+import CreateQuizForm from "./CreateQuizForm";
+import QuizzesSection from "./QuizzesSection";
+import AssignmentsSection from "./AssignmentsSection";
 
 interface Student {
   id: string;
@@ -63,9 +68,11 @@ const TeacherDashboard = () => {
   const [saving, setSaving] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
+  const [showCreatePoll, setShowCreatePoll] = useState(false);
+  const [showCreateQuiz, setShowCreateQuiz] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
-
+  const [studentFilter, setStudentFilter] = useState<"all" | "verified" | "pending">("all");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -99,6 +106,14 @@ const TeacherDashboard = () => {
     else { toast.success("Verification revoked"); fetchStudents(); }
   };
 
+  const removeStudent = async (userId: string) => {
+    // Remove role and profile (auth user stays but loses access)
+    await supabase.from("user_roles").delete().eq("user_id", userId);
+    await supabase.from("profiles").delete().eq("user_id", userId);
+    toast.success("Student removed");
+    fetchStudents();
+  };
+
   const handleAiSuggest = async () => {
     const ytId = extractYouTubeId(videoUrl);
     if (!ytId) { toast.error("Enter a valid YouTube URL first"); return; }
@@ -112,7 +127,7 @@ const TeacherDashboard = () => {
       if (data?.description) setDescription(data.description);
       if (data?.subject) setSubject(data.subject);
       toast.success("AI suggestions applied!");
-    } catch (err: any) {
+    } catch {
       toast.error("AI suggestion failed. You can fill in manually.");
     } finally {
       setAiLoading(false);
@@ -148,7 +163,6 @@ const TeacherDashboard = () => {
     }
   };
 
-
   const deleteVideo = async (video: VideoItem) => {
     const { error } = await supabase.from("videos").delete().eq("id", video.id);
     if (error) toast.error("Failed to delete video");
@@ -156,9 +170,14 @@ const TeacherDashboard = () => {
   };
 
   const filteredStudents = students.filter((s) => {
-    if (!searchCode.trim()) return true;
-    const q = searchCode.toLowerCase();
-    return s.verification_code.toLowerCase().includes(q) || s.full_name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q);
+    const matchesSearch = !searchCode.trim() || 
+      s.verification_code.toLowerCase().includes(searchCode.toLowerCase()) || 
+      s.full_name.toLowerCase().includes(searchCode.toLowerCase()) || 
+      s.email.toLowerCase().includes(searchCode.toLowerCase());
+    const matchesFilter = studentFilter === "all" || 
+      (studentFilter === "verified" && s.is_verified) || 
+      (studentFilter === "pending" && !s.is_verified);
+    return matchesSearch && matchesFilter;
   });
 
   const verifiedCount = students.filter((s) => s.is_verified).length;
@@ -172,7 +191,7 @@ const TeacherDashboard = () => {
             EduGo<span className="text-accent">Classes</span>
           </Link>
           <div className="flex items-center gap-2">
-            <Badge className="bg-accent/20 text-accent border-accent/30 text-xs">Teacher</Badge>
+            <Badge className="bg-accent/20 text-accent border-accent/30 text-xs">Admin</Badge>
             <Link to="/">
               <Button variant="ghost" size="icon" className="text-primary-foreground/70 hover:text-primary-foreground">
                 <Home className="w-5 h-5" />
@@ -185,84 +204,107 @@ const TeacherDashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 max-w-3xl">
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <Card className="border-border/50">
-            <CardContent className="pt-4 pb-3 text-center">
-              <p className="text-2xl font-bold text-primary">{students.length}</p>
-              <p className="text-xs text-muted-foreground">Total</p>
+      <main className="container mx-auto px-4 py-4 max-w-3xl">
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <Card className="border-border/50 cursor-pointer" onClick={() => setStudentFilter("all")}>
+            <CardContent className="pt-3 pb-2 text-center">
+              <p className="text-xl font-bold text-primary">{students.length}</p>
+              <p className="text-[10px] text-muted-foreground">Total</p>
             </CardContent>
           </Card>
-          <Card className="border-green-500/20 bg-green-500/5">
-            <CardContent className="pt-4 pb-3 text-center">
-              <p className="text-2xl font-bold text-green-600">{verifiedCount}</p>
-              <p className="text-xs text-muted-foreground">Verified</p>
+          <Card className="border-green-500/20 bg-green-500/5 cursor-pointer" onClick={() => setStudentFilter("verified")}>
+            <CardContent className="pt-3 pb-2 text-center">
+              <p className="text-xl font-bold text-green-600">{verifiedCount}</p>
+              <p className="text-[10px] text-muted-foreground">Verified</p>
             </CardContent>
           </Card>
-          <Card className="border-amber-500/20 bg-amber-500/5">
-            <CardContent className="pt-4 pb-3 text-center">
-              <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
-              <p className="text-xs text-muted-foreground">Pending</p>
+          <Card className="border-amber-500/20 bg-amber-500/5 cursor-pointer" onClick={() => setStudentFilter("pending")}>
+            <CardContent className="pt-3 pb-2 text-center">
+              <p className="text-xl font-bold text-amber-600">{pendingCount}</p>
+              <p className="text-[10px] text-muted-foreground">Pending</p>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="students" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-4">
-            <TabsTrigger value="students" className="gap-1 text-xs">
+        <Tabs defaultValue="students" className="space-y-3">
+          <TabsList className="w-full grid grid-cols-6 h-auto">
+            <TabsTrigger value="students" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
               <Users className="w-4 h-4" /> Students
             </TabsTrigger>
-            <TabsTrigger value="videos" className="gap-1 text-xs">
+            <TabsTrigger value="videos" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
               <Video className="w-4 h-4" /> Videos
             </TabsTrigger>
-            <TabsTrigger value="live" className="gap-1 text-xs">
+            <TabsTrigger value="live" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
               <Radio className="w-4 h-4" /> Live
             </TabsTrigger>
-            <TabsTrigger value="posts" className="gap-1 text-xs">
+            <TabsTrigger value="posts" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
               <Megaphone className="w-4 h-4" /> Posts
+            </TabsTrigger>
+            <TabsTrigger value="quizzes" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
+              <ClipboardCheck className="w-4 h-4" /> Quizzes
+            </TabsTrigger>
+            <TabsTrigger value="homework" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
+              <BookOpen className="w-4 h-4" /> HW
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="students" className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search by name, email or code..." value={searchCode} onChange={(e) => setSearchCode(e.target.value)} className="pl-10" />
+          <TabsContent value="students" className="space-y-3">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input placeholder="Search..." value={searchCode} onChange={(e) => setSearchCode(e.target.value)} className="pl-10 h-9" />
+              </div>
             </div>
-            <div className="space-y-3">
+            
+            {/* Pending approval section */}
+            {pendingCount > 0 && studentFilter !== "verified" && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-amber-600 flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> {pendingCount} pending approval
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
               {filteredStudents.length === 0 ? (
                 <Card className="border-border/50">
-                  <CardContent className="pt-6 text-center text-muted-foreground">No students found</CardContent>
+                  <CardContent className="pt-6 text-center text-muted-foreground text-sm">No students found</CardContent>
                 </Card>
               ) : (
                 filteredStudents.map((student) => (
-                  <Card key={student.id} className="border-border/50">
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex items-start justify-between gap-3">
+                  <Card key={student.id} className={`border-border/50 ${!student.is_verified ? "border-l-2 border-l-amber-500" : ""}`}>
+                    <CardContent className="pt-3 pb-3">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold truncate">{student.full_name}</h4>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <h4 className="font-semibold text-sm truncate">{student.full_name}</h4>
                             {student.is_verified ? (
-                              <ShieldCheck className="w-4 h-4 text-green-500 flex-shrink-0" />
+                              <ShieldCheck className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
                             ) : (
-                              <Clock className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                              <Clock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground truncate">{student.email}</p>
-                          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1"><GraduationCap className="w-3 h-3" /> {student.class || "N/A"}</span>
-                            <span>Code: <code className="font-mono font-bold text-foreground">{student.verification_code}</code></span>
+                          <p className="text-xs text-muted-foreground truncate">{student.email}</p>
+                          <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
+                            <span>{student.class || "N/A"}</span>
+                            <span>•</span>
+                            <code className="font-mono font-bold text-foreground">{student.verification_code}</code>
                           </div>
                         </div>
-                        <div>
+                        <div className="flex items-center gap-1">
                           {student.is_verified ? (
-                            <Button variant="outline" size="sm" onClick={() => revokeVerification(student.user_id)} className="text-red-500 hover:text-red-600 border-red-200">
-                              <XCircle className="w-4 h-4 mr-1" /> Revoke
+                            <Button variant="outline" size="sm" onClick={() => revokeVerification(student.user_id)} className="text-red-500 h-7 text-xs px-2">
+                              <XCircle className="w-3 h-3 mr-1" /> Revoke
                             </Button>
                           ) : (
-                            <Button size="sm" onClick={() => verifyStudent(student.user_id)} className="bg-green-600 hover:bg-green-700 text-primary-foreground">
-                              <CheckCircle2 className="w-4 h-4 mr-1" /> Verify
+                            <Button size="sm" onClick={() => verifyStudent(student.user_id)} className="bg-green-600 hover:bg-green-700 text-white h-7 text-xs px-2">
+                              <CheckCircle2 className="w-3 h-3 mr-1" /> Verify
                             </Button>
                           )}
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600" onClick={() => removeStudent(student.user_id)}>
+                            <UserX className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -272,15 +314,15 @@ const TeacherDashboard = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="videos" className="space-y-4">
+          <TabsContent value="videos" className="space-y-3">
             <div className="flex gap-2">
               {!showUpload && (
-                <Button onClick={() => setShowUpload(true)} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
-                  <Plus className="w-4 h-4 mr-2" /> Add YouTube Video
+                <Button onClick={() => setShowUpload(true)} size="sm" className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Plus className="w-4 h-4 mr-1" /> Add Video
                 </Button>
               )}
               <Button
-                variant="outline"
+                variant="outline" size="sm"
                 onClick={async () => {
                   setSyncing(true);
                   try {
@@ -297,69 +339,57 @@ const TeacherDashboard = () => {
                 disabled={syncing}
                 className={showUpload ? "w-full" : ""}
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
-                {syncing ? "Syncing..." : "Sync Channel"}
+                <RefreshCw className={`w-4 h-4 mr-1 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "Syncing..." : "Sync"}
               </Button>
             </div>
             {showUpload && (
               <Card className="border-accent/20">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <LinkIcon className="w-5 h-5 text-accent" /> Add YouTube Video
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <LinkIcon className="w-4 h-4 text-accent" /> Add YouTube Video
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleAddVideo} className="space-y-4">
+                  <form onSubmit={handleAddVideo} className="space-y-3">
                     <div className="space-y-2">
-                      <Label>YouTube Link * <span className="text-xs text-muted-foreground">(Unlisted or Public)</span></Label>
-                      <Input
-                        placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
-                        value={videoUrl}
-                        onChange={(e) => setVideoUrl(e.target.value)}
-                        required
-                      />
+                      <Label className="text-xs">YouTube Link *</Label>
+                      <Input placeholder="https://youtube.com/watch?v=..." value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} required className="h-9" />
                       {videoUrl && extractYouTubeId(videoUrl) && (
-                        <>
-                          <div className="mt-2 rounded-lg overflow-hidden border border-border/50">
-                            <img src={`https://img.youtube.com/vi/${extractYouTubeId(videoUrl)}/hqdefault.jpg`} alt="Video thumbnail" className="w-full h-auto" />
-                          </div>
-                          <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={handleAiSuggest} disabled={aiLoading}>
-                            {aiLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                            {aiLoading ? "AI is thinking..." : "Auto-fill with AI"}
-                          </Button>
-                        </>
-                      )}
-                      {videoUrl && !extractYouTubeId(videoUrl) && (
-                        <p className="text-xs text-destructive">Invalid YouTube URL</p>
+                        <Button type="button" variant="outline" size="sm" className="w-full" onClick={handleAiSuggest} disabled={aiLoading}>
+                          {aiLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
+                          {aiLoading ? "AI thinking..." : "Auto-fill with AI"}
+                        </Button>
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label>Title *</Label>
-                      <Input placeholder="Video title" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={200} />
+                      <Label className="text-xs">Title *</Label>
+                      <Input placeholder="Video title" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={200} className="h-9" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Subject</Label>
-                      <Input placeholder="e.g. Math, Science, English" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={50} />
+                      <Label className="text-xs">Subject</Label>
+                      <Input placeholder="e.g. Math" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={50} className="h-9" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Description</Label>
-                      <Textarea placeholder="Brief description..." value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={1000} />
+                      <Label className="text-xs">Description</Label>
+                      <Textarea placeholder="Brief description..." value={description} onChange={(e) => setDescription(e.target.value)} rows={2} maxLength={1000} />
                     </div>
                     <div className="flex gap-2">
-                      <Button type="submit" disabled={saving} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
-                        {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : <><Plus className="w-4 h-4 mr-2" /> Add Video</>}
+                      <Button type="submit" disabled={saving} size="sm" className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
+                        {saving ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Plus className="w-3 h-3 mr-1" />}
+                        Add
                       </Button>
-                      <Button type="button" variant="outline" onClick={() => setShowUpload(false)} disabled={saving}>Cancel</Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setShowUpload(false)}>Cancel</Button>
                     </div>
                   </form>
                 </CardContent>
               </Card>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {videos.length === 0 ? (
                 <Card className="border-border/50">
-                  <CardContent className="pt-6 text-center text-muted-foreground">No videos added yet</CardContent>
+                  <CardContent className="pt-6 text-center text-muted-foreground text-sm">No videos yet</CardContent>
                 </Card>
               ) : (
                 videos.map((video) => {
@@ -367,21 +397,19 @@ const TeacherDashboard = () => {
                   const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : video.thumbnail_url;
                   return (
                     <Card key={video.id} className="border-border/50 overflow-hidden">
-                      <div className="flex flex-col sm:flex-row">
+                      <div className="flex">
                         {thumb && (
-                          <div className="sm:w-40 h-24 sm:h-auto bg-muted flex-shrink-0">
+                          <div className="w-28 h-20 bg-muted flex-shrink-0">
                             <img src={thumb} alt={video.title} className="w-full h-full object-cover" />
                           </div>
                         )}
-                        <div className="flex-1 p-4 flex items-start justify-between gap-2">
+                        <div className="flex-1 p-3 flex items-center justify-between gap-2 min-w-0">
                           <div className="min-w-0">
-                            <h4 className="font-semibold truncate">{video.title}</h4>
-                            {video.subject && <Badge variant="outline" className="text-xs mt-1">{video.subject}</Badge>}
-                            {video.description && <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{video.description}</p>}
-                            <p className="text-xs text-muted-foreground mt-1">{new Date(video.created_at).toLocaleDateString()}</p>
+                            <h4 className="font-semibold text-sm truncate">{video.title}</h4>
+                            {video.subject && <Badge variant="outline" className="text-[10px] mt-0.5">{video.subject}</Badge>}
                           </div>
-                          <Button variant="ghost" size="icon" onClick={() => deleteVideo(video)} className="text-red-400 hover:text-red-600 flex-shrink-0">
-                            <Trash2 className="w-4 h-4" />
+                          <Button variant="ghost" size="icon" onClick={() => deleteVideo(video)} className="text-red-400 hover:text-red-600 h-8 w-8 flex-shrink-0">
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
                       </div>
@@ -392,19 +420,42 @@ const TeacherDashboard = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="live" className="space-y-4">
+          <TabsContent value="live" className="space-y-3">
             <LiveStreamSection isTeacher />
           </TabsContent>
 
-          <TabsContent value="posts" className="space-y-4">
-            {!showCreatePost ? (
-              <Button onClick={() => setShowCreatePost(true)} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Plus className="w-4 h-4 mr-2" /> Create Post
+          <TabsContent value="posts" className="space-y-3">
+            <div className="flex gap-2">
+              {!showCreatePost && !showCreatePoll && (
+                <>
+                  <Button onClick={() => setShowCreatePost(true)} size="sm" className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <Megaphone className="w-4 h-4 mr-1" /> Post
+                  </Button>
+                  <Button onClick={() => setShowCreatePoll(true)} size="sm" variant="outline" className="flex-1">
+                    <BarChart3 className="w-4 h-4 mr-1" /> Poll
+                  </Button>
+                </>
+              )}
+            </div>
+            {showCreatePost && <CreatePostForm onCreated={() => setShowCreatePost(false)} onCancel={() => setShowCreatePost(false)} />}
+            {showCreatePoll && <CreatePollForm onCreated={() => setShowCreatePoll(false)} onCancel={() => setShowCreatePoll(false)} />}
+            <PollsSection isTeacher />
+            <PostsSection isTeacher />
+          </TabsContent>
+
+          <TabsContent value="quizzes" className="space-y-3">
+            {!showCreateQuiz ? (
+              <Button onClick={() => setShowCreateQuiz(true)} size="sm" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Plus className="w-4 h-4 mr-1" /> Create Quiz / Test
               </Button>
             ) : (
-              <CreatePostForm onCreated={() => setShowCreatePost(false)} onCancel={() => setShowCreatePost(false)} />
+              <CreateQuizForm onCreated={() => setShowCreateQuiz(false)} onCancel={() => setShowCreateQuiz(false)} />
             )}
-            <PostsSection isTeacher />
+            <QuizzesSection isTeacher />
+          </TabsContent>
+
+          <TabsContent value="homework" className="space-y-3">
+            <AssignmentsSection isTeacher />
           </TabsContent>
         </Tabs>
       </main>
