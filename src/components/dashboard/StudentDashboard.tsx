@@ -256,7 +256,7 @@ const StudentDashboard = () => {
         {/* Content tabs */}
         {profile?.is_verified ? (
           <Tabs defaultValue="videos" className="space-y-3">
-            <TabsList className="w-full grid grid-cols-6 h-auto">
+            <TabsList className="w-full grid grid-cols-5 h-auto">
               <TabsTrigger value="videos" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
                 <Play className="w-4 h-4" /> Videos
               </TabsTrigger>
@@ -268,9 +268,6 @@ const StudentDashboard = () => {
               </TabsTrigger>
               <TabsTrigger value="quizzes" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
                 <ClipboardCheck className="w-4 h-4" /> Quizzes
-              </TabsTrigger>
-              <TabsTrigger value="homework" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
-                <BookOpen className="w-4 h-4" /> HW
               </TabsTrigger>
               <TabsTrigger value="polls" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
                 <BarChart3 className="w-4 h-4" /> Polls
@@ -347,9 +344,6 @@ const StudentDashboard = () => {
               <QuizzesSection />
             </TabsContent>
 
-            <TabsContent value="homework">
-              <AssignmentsSection />
-            </TabsContent>
 
             <TabsContent value="polls">
               <PollsSection />
