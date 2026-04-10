@@ -211,8 +211,7 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
         </Button>
         <QuizAttempt
           quiz={activeQuiz}
-          questions={quizQuestions}
-          onComplete={() => { setActiveQuiz(null); toast.success("Quiz submitted!"); }}
+          onBack={() => { setActiveQuiz(null); toast.success("Quiz submitted!"); }}
         />
       </div>
     );
