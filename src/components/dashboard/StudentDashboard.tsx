@@ -21,6 +21,8 @@ import PostsSection from "./PostsSection";
 import LiveStreamSection from "./LiveStreamSection";
 import PollsSection from "./PollsSection";
 import QuizzesSection from "./QuizzesSection";
+import ProgressLeaderboard from "./ProgressLeaderboard";
+import DailyGoals from "./DailyGoals";
 
 interface Video {
   id: string;
