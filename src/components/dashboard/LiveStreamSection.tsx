@@ -157,7 +157,7 @@ const LiveStreamSection = ({ isTeacher = false }: LiveStreamSectionProps) => {
     if (error) toast.error("Failed to create stream");
     else {
       toast.success("Live stream started!");
-      setTitle(""); setYtUrl(""); setSubject(""); setShowCreate(false); fetchStreams();
+      setTitle(""); setYtUrl(""); setSubject(""); setClassFilter(""); setShowCreate(false); fetchStreams();
     }
     setSaving(false);
   };
@@ -300,6 +300,10 @@ const LiveStreamSection = ({ isTeacher = false }: LiveStreamSectionProps) => {
               <div className="space-y-2">
                 <Label className="text-xs">Subject</Label>
                 <Input placeholder="e.g. Math" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={50} className="h-9" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Class / Board</Label>
+                <Input placeholder="e.g. Class 10 CBSE" value={classFilter} onChange={(e) => setClassFilter(e.target.value)} maxLength={50} className="h-9" />
               </div>
               <div className="space-y-2">
                 <Label className="text-xs">YouTube Live URL *</Label>
