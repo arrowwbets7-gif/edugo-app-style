@@ -341,7 +341,7 @@ const StudentDashboard = () => {
                           <div className="p-3">
                             <div className="flex items-start justify-between gap-2">
                               <h3 className="font-semibold text-sm leading-snug flex-1">{video.title}</h3>
-                              <div className="flex items-center gap-0.5 flex-shrink-0">
+                              <div className="flex items-center gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
                                 <BookmarkButton videoId={video.id} />
                                 <VideoNotes videoId={video.id} videoTitle={video.title} />
                               </div>
