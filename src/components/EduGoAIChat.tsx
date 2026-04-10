@@ -345,27 +345,27 @@ const EduGoAIChat = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-foreground"
+              className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading}
             >
-              <ImagePlus className="w-4 h-4" />
+              <ImagePlus className="h-4 w-4" />
             </Button>
             <Input
               placeholder="Ask a question..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-              className="h-8 text-sm flex-1 min-w-0"
+              className="h-9 text-sm flex-1 min-w-0"
               disabled={isLoading}
             />
             <Button
               size="icon"
-              className="h-8 w-8 flex-shrink-0"
+              className="h-9 w-9 shrink-0"
               onClick={sendMessage}
               disabled={isLoading || (!input.trim() && !imagePreview)}
             >
-              <Send className="w-3.5 h-3.5" />
+              <Send className="h-4 w-4" />
             </Button>
           </div>
         </div>

@@ -413,16 +413,16 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
 
         {/* Simple chat input */}
         <div className="p-2 border-t border-border/50">
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Input
               placeholder="Type a message..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              className="h-8 text-sm"
+              className="h-9 text-sm flex-1"
             />
-            <Button size="icon" className="h-8 w-8" onClick={sendMessage}>
-              <Send className="w-3.5 h-3.5" />
+            <Button size="icon" className="h-9 w-9 shrink-0" onClick={sendMessage} disabled={!newMessage.trim()}>
+              <Send className="h-4 w-4" />
             </Button>
           </div>
         </div>
