@@ -1,6 +1,29 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: (() => void) | undefined;
+  }
+}
+
+const loadYTApi = (): Promise<void> => {
+  return new Promise((resolve) => {
+    if (window.YT?.Player) { resolve(); return; }
+    const existing = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+    if (existing) {
+      const check = setInterval(() => { if (window.YT?.Player) { clearInterval(check); resolve(); } }, 100);
+      return;
+    }
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    const first = document.getElementsByTagName("script")[0];
+    first.parentNode?.insertBefore(tag, first);
+    window.onYouTubeIframeAPIReady = () => resolve();
+  });
+};
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
