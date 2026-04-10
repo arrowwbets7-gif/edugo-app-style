@@ -73,6 +73,7 @@ const TeacherDashboard = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [studentFilter, setStudentFilter] = useState<"all" | "verified" | "pending">("all");
+  const [videoClassFilter, setVideoClassFilter] = useState("");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -366,9 +367,15 @@ const TeacherDashboard = () => {
                       <Label className="text-xs">Title *</Label>
                       <Input placeholder="Video title" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={200} className="h-9" />
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Subject</Label>
-                      <Input placeholder="e.g. Math" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={50} className="h-9" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-2">
+                        <Label className="text-xs">Subject</Label>
+                        <Input placeholder="e.g. Math" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={50} className="h-9" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Class / Board</Label>
+                        <Input placeholder="e.g. Class 10 CBSE" value={videoClassFilter} onChange={(e) => setVideoClassFilter(e.target.value)} maxLength={50} className="h-9" />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs">Description</Label>
