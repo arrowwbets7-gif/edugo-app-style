@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import {
-  Copy, CheckCircle2, Clock, LogOut, Home, Play, GraduationCap, ShieldCheck, User
+  Copy, CheckCircle2, Clock, LogOut, Home, Play, GraduationCap, ShieldCheck, User, X
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,10 +19,25 @@ interface Video {
   created_at: string;
 }
 
+const extractYouTubeId = (url: string): string | null => {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+    /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+};
+
 const StudentDashboard = () => {
   const { user, profile, role, signOut, refreshProfile } = useAuth();
   const [videos, setVideos] = useState<Video[]>([]);
   const [copied, setCopied] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile?.is_verified) fetchVideos();
@@ -47,7 +62,39 @@ const StudentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Fullscreen Video Player Overlay */}
+      {playingVideo && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setPlayingVideo(null)}
+            className="absolute top-4 right-4 text-white/70 hover:text-white z-10"
+          >
+            <X className="w-6 h-6" />
+          </Button>
+          <div className="w-full max-w-4xl aspect-video relative">
+            {/* Invisible overlay to block right-click on iframe */}
+            <div
+              className="absolute inset-0 z-10"
+              onContextMenu={(e) => e.preventDefault()}
+              style={{ pointerEvents: "none" }}
+            />
+            <iframe
+              src={`https://www.youtube.com/embed/${playingVideo}?autoplay=1&rel=0&modestbranding=1&disablekb=0`}
+              title="Video Player"
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+              className="w-full h-full rounded-xl"
+              style={{ border: "none" }}
+            />
+          </div>
+        </div>
+      )}
+
       <header className="sticky top-0 z-50 bg-primary/95 backdrop-blur-lg border-b border-primary-foreground/10">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="text-lg font-extrabold font-heading text-primary-foreground">
@@ -138,32 +185,49 @@ const StudentDashboard = () => {
               </Card>
             ) : (
               <div className="grid gap-4">
-                {videos.map((video) => (
-                  <Card key={video.id} className="border-border/50 overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="flex flex-col sm:flex-row">
-                      {video.thumbnail_url && (
-                        <div className="sm:w-48 h-32 sm:h-auto bg-muted flex-shrink-0">
-                          <img
-                            src={video.thumbnail_url}
-                            alt={video.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div className="flex-1 p-4">
-                        <h3 className="font-semibold mb-1">{video.title}</h3>
-                        {video.description && (
-                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{video.description}</p>
+                {videos.map((video) => {
+                  const ytId = extractYouTubeId(video.video_url);
+                  const thumb = ytId
+                    ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
+                    : video.thumbnail_url;
+
+                  return (
+                    <Card
+                      key={video.id}
+                      className="border-border/50 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => ytId && setPlayingVideo(ytId)}
+                      onContextMenu={(e) => e.preventDefault()}
+                    >
+                      <div className="relative">
+                        {thumb && (
+                          <div className="relative w-full aspect-video bg-muted">
+                            <img
+                              src={thumb}
+                              alt={video.title}
+                              className="w-full h-full object-cover select-none pointer-events-none"
+                              draggable={false}
+                            />
+                            {/* Play button overlay */}
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                              <div className="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center shadow-lg">
+                                <Play className="w-7 h-7 text-white ml-1" fill="white" />
+                              </div>
+                            </div>
+                          </div>
                         )}
-                        <a href={video.video_url} target="_blank" rel="noopener noreferrer">
-                          <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                            <Play className="w-4 h-4 mr-1" /> Watch
-                          </Button>
-                        </a>
+                        <div className="p-4">
+                          <h3 className="font-semibold mb-1">{video.title}</h3>
+                          {video.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2">{video.description}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {new Date(video.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
