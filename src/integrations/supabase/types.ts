@@ -203,6 +203,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          reference_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          reference_id?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          reference_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       poll_options: {
         Row: {
           created_at: string
@@ -644,6 +677,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      notify_all_students: {
+        Args: {
+          _message: string
+          _reference_id?: string
+          _title: string
+          _type: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

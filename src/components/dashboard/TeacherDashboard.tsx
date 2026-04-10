@@ -12,8 +12,8 @@ import { Link } from "react-router-dom";
 import {
   LogOut, Home, Users, Video, CheckCircle2, XCircle,
   Search, Trash2, Plus, ShieldCheck, Clock, Loader2, LinkIcon, Megaphone,
-  Radio, Sparkles, RefreshCw, BarChart3, ClipboardCheck, BookOpen, UserX,
-  TrendingUp, Activity, Eye, Flame, Award
+  Radio, Sparkles, RefreshCw, BarChart3, ClipboardCheck,
+  TrendingUp, Activity, Eye, Flame, Award, UserX
 } from "lucide-react";
 import { toast } from "sonner";
 import PostsSection from "./PostsSection";
@@ -23,7 +23,7 @@ import CreatePollForm from "./CreatePollForm";
 import PollsSection from "./PollsSection";
 import CreateQuizForm from "./CreateQuizForm";
 import QuizzesSection from "./QuizzesSection";
-import AssignmentsSection from "./AssignmentsSection";
+
 
 interface Student {
   id: string;
@@ -201,6 +201,12 @@ const TeacherDashboard = () => {
       });
       if (error) throw error;
       toast.success("Video added successfully!");
+      // Notify students
+      await supabase.rpc("notify_all_students", {
+        _type: "new_video",
+        _title: "New Video: " + title.trim(),
+        _message: subject.trim() ? `A new ${subject.trim()} video has been uploaded.` : "A new video has been uploaded.",
+      });
       setTitle(""); setDescription(""); setVideoUrl(""); setSubject("");
       setShowUpload(false);
       fetchVideos();
@@ -276,7 +282,7 @@ const TeacherDashboard = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-3">
-          <TabsList className="w-full grid grid-cols-7 h-auto">
+          <TabsList className="w-full grid grid-cols-6 h-auto">
             <TabsTrigger value="overview" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
               <TrendingUp className="w-4 h-4" /> Overview
             </TabsTrigger>
@@ -294,9 +300,6 @@ const TeacherDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="quizzes" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
               <ClipboardCheck className="w-4 h-4" /> Quizzes
-            </TabsTrigger>
-            <TabsTrigger value="homework" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
-              <BookOpen className="w-4 h-4" /> HW
             </TabsTrigger>
           </TabsList>
 
@@ -612,9 +615,6 @@ const TeacherDashboard = () => {
             <QuizzesSection isTeacher />
           </TabsContent>
 
-          <TabsContent value="homework" className="space-y-3">
-            <AssignmentsSection isTeacher />
-          </TabsContent>
         </Tabs>
       </main>
     </div>

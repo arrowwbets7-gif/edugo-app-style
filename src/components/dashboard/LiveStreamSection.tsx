@@ -74,6 +74,12 @@ const LiveStreamSection = ({ isTeacher = false }: LiveStreamSectionProps) => {
     if (error) toast.error("Failed to create stream");
     else {
       toast.success("Live stream started!");
+      // Notify students
+      await supabase.rpc("notify_all_students", {
+        _type: "live_started",
+        _title: "🔴 Live: " + title.trim(),
+        _message: subject.trim() ? `${subject.trim()} live class has started!` : "A live class has started!",
+      });
       setTitle(""); setYtUrl(""); setSubject(""); setClassFilter(""); setShowCreate(false); fetchStreams();
     }
     setSaving(false);

@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import NotificationBell from "./NotificationBell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import {
   Copy, CheckCircle2, Clock, LogOut, Home, Play, ShieldCheck, User, Search, Megaphone, Radio,
-  ClipboardCheck, BookOpen, BarChart3, Flame, Trophy, Target, TrendingUp
+  ClipboardCheck, BarChart3, Flame, Trophy, Target, TrendingUp
 } from "lucide-react";
 import { toast } from "sonner";
 import CustomVideoPlayer from "./CustomVideoPlayer";
@@ -18,7 +19,7 @@ import PostsSection from "./PostsSection";
 import LiveStreamSection from "./LiveStreamSection";
 import PollsSection from "./PollsSection";
 import QuizzesSection from "./QuizzesSection";
-import AssignmentsSection from "./AssignmentsSection";
+
 
 interface Video {
   id: string;
@@ -154,7 +155,8 @@ const StudentDashboard = () => {
           <Link to="/" className="text-lg font-extrabold font-heading text-primary-foreground">
             EduGo<span className="text-accent">Classes</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <NotificationBell />
             {streak.current > 0 && (
               <Badge className="bg-accent/20 text-accent border-accent/30 text-xs gap-1">
                 <Flame className="w-3 h-3" /> {streak.current} day{streak.current > 1 ? "s" : ""}
@@ -255,7 +257,7 @@ const StudentDashboard = () => {
         {/* Content tabs */}
         {profile?.is_verified ? (
           <Tabs defaultValue="videos" className="space-y-3">
-            <TabsList className="w-full grid grid-cols-6 h-auto">
+            <TabsList className="w-full grid grid-cols-5 h-auto">
               <TabsTrigger value="videos" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
                 <Play className="w-4 h-4" /> Videos
               </TabsTrigger>
@@ -267,9 +269,6 @@ const StudentDashboard = () => {
               </TabsTrigger>
               <TabsTrigger value="quizzes" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
                 <ClipboardCheck className="w-4 h-4" /> Quizzes
-              </TabsTrigger>
-              <TabsTrigger value="homework" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
-                <BookOpen className="w-4 h-4" /> HW
               </TabsTrigger>
               <TabsTrigger value="polls" className="text-[10px] px-1 py-2 flex flex-col gap-0.5">
                 <BarChart3 className="w-4 h-4" /> Polls
@@ -346,9 +345,6 @@ const StudentDashboard = () => {
               <QuizzesSection />
             </TabsContent>
 
-            <TabsContent value="homework">
-              <AssignmentsSection />
-            </TabsContent>
 
             <TabsContent value="polls">
               <PollsSection />

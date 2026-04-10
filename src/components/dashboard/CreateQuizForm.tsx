@@ -91,6 +91,12 @@ const CreateQuizForm = ({ onCreated, onCancel }: Props) => {
       if (qErr) throw qErr;
 
       toast.success("Quiz created!");
+      // Notify students
+      await supabase.rpc("notify_all_students", {
+        _type: "new_quiz",
+        _title: "New Quiz: " + title.trim(),
+        _message: subject.trim() ? `A new ${subject.trim()} quiz is available!` : "A new quiz is available!",
+      });
       onCreated();
     } catch (err: any) {
       toast.error(err.message || "Failed to create quiz");
