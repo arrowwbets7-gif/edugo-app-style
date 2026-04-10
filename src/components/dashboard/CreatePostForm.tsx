@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Loader2, Megaphone } from "lucide-react";
+import { Plus, Loader2, Megaphone, Paperclip, X, FileText, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 interface CreatePostFormProps {
@@ -23,6 +23,24 @@ const CreatePostForm = ({ onCreated, onCancel }: CreatePostFormProps) => {
   const [classFilter, setClassFilter] = useState("");
   const [subject, setSubject] = useState("");
   const [saving, setSaving] = useState(false);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast.error("File must be under 10MB");
+      return;
+    }
+    const allowed = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowed.includes(file.type)) {
+      toast.error("Only PDF and image files are allowed");
+      return;
+    }
+    setAttachment(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +50,21 @@ const CreatePostForm = ({ onCreated, onCancel }: CreatePostFormProps) => {
     }
     setSaving(true);
     try {
+      let attachmentUrl: string | null = null;
+      let attachmentType: string | null = null;
+
+      if (attachment) {
+        const ext = attachment.name.split(".").pop();
+        const path = `${user.id}/${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("post-attachments")
+          .upload(path, attachment);
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from("post-attachments").getPublicUrl(path);
+        attachmentUrl = urlData.publicUrl;
+        attachmentType = attachment.type.startsWith("image/") ? "image" : "pdf";
+      }
+
       const { error } = await supabase.from("posts").insert({
         author_id: user.id,
         title: title.trim(),
@@ -39,6 +72,8 @@ const CreatePostForm = ({ onCreated, onCancel }: CreatePostFormProps) => {
         type: type as any,
         class_filter: classFilter.trim(),
         subject: subject.trim(),
+        attachment_url: attachmentUrl,
+        attachment_type: attachmentType,
       });
       if (error) throw error;
       toast.success("Post created!");
@@ -64,9 +99,9 @@ const CreatePostForm = ({ onCreated, onCancel }: CreatePostFormProps) => {
             <Select value={type} onValueChange={setType}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="announcement">📢 Announcement</SelectItem>
-                <SelectItem value="discussion">💬 Discussion</SelectItem>
-                <SelectItem value="note">📝 Study Note</SelectItem>
+                <SelectItem value="announcement">Announcement</SelectItem>
+                <SelectItem value="discussion">Discussion</SelectItem>
+                <SelectItem value="note">Study Note</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -88,6 +123,30 @@ const CreatePostForm = ({ onCreated, onCancel }: CreatePostFormProps) => {
               <Input placeholder="e.g. Math" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={50} />
             </div>
           </div>
+
+          {/* Attachment */}
+          <div className="space-y-2">
+            <Label>Attachment (optional)</Label>
+            <input type="file" ref={fileRef} className="hidden" accept=".pdf,image/*" onChange={handleFileChange} />
+            {attachment ? (
+              <div className="flex items-center gap-2 p-2 border rounded-lg border-border/50 bg-muted/30">
+                {attachment.type.startsWith("image/") ? (
+                  <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                )}
+                <span className="text-sm truncate flex-1">{attachment.name}</span>
+                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setAttachment(null)}>
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            ) : (
+              <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="w-full">
+                <Paperclip className="w-4 h-4 mr-2" /> Attach PDF or Image
+              </Button>
+            )}
+          </div>
+
           <div className="flex gap-2">
             <Button type="submit" disabled={saving} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
               {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : <><Plus className="w-4 h-4 mr-2" /> Create Post</>}

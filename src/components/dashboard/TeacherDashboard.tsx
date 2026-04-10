@@ -11,11 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import {
   LogOut, Home, Users, Video, CheckCircle2, XCircle,
-  Search, Trash2, Plus, ShieldCheck, Clock, GraduationCap, Loader2, LinkIcon, Megaphone
+  Search, Trash2, Plus, ShieldCheck, Clock, GraduationCap, Loader2, LinkIcon, Megaphone,
+  Radio, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import PostsSection from "./PostsSection";
 import CreatePostForm from "./CreatePostForm";
+import LiveStreamSection from "./LiveStreamSection";
 
 interface Student {
   id: string;
@@ -44,6 +46,7 @@ const extractYouTubeId = (url: string): string | null => {
     /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
     /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
     /(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/live\/)([a-zA-Z0-9_-]{11})/,
   ];
   for (const p of patterns) {
     const m = url.match(p);
@@ -60,6 +63,7 @@ const TeacherDashboard = () => {
   const [saving, setSaving] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -72,57 +76,56 @@ const TeacherDashboard = () => {
   }, []);
 
   const fetchStudents = async () => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { data } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
     if (data) setStudents(data);
   };
 
   const fetchVideos = async () => {
-    const { data } = await supabase
-      .from("videos")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { data } = await supabase.from("videos").select("*").order("created_at", { ascending: false });
     if (data) setVideos(data as VideoItem[]);
   };
 
   const verifyStudent = async (userId: string) => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ is_verified: true })
-      .eq("user_id", userId);
+    const { error } = await supabase.from("profiles").update({ is_verified: true }).eq("user_id", userId);
     if (error) toast.error("Failed to verify student");
     else { toast.success("Student verified!"); fetchStudents(); }
   };
 
   const revokeVerification = async (userId: string) => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ is_verified: false })
-      .eq("user_id", userId);
+    const { error } = await supabase.from("profiles").update({ is_verified: false }).eq("user_id", userId);
     if (error) toast.error("Failed to revoke verification");
     else { toast.success("Verification revoked"); fetchStudents(); }
   };
 
+  const handleAiSuggest = async () => {
+    const ytId = extractYouTubeId(videoUrl);
+    if (!ytId) { toast.error("Enter a valid YouTube URL first"); return; }
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-video-helper", {
+        body: { youtubeUrl: videoUrl, youtubeId: ytId },
+      });
+      if (error) throw error;
+      if (data?.title) setTitle(data.title);
+      if (data?.description) setDescription(data.description);
+      if (data?.subject) setSubject(data.subject);
+      toast.success("AI suggestions applied!");
+    } catch (err: any) {
+      toast.error("AI suggestion failed. You can fill in manually.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleAddVideo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !videoUrl.trim()) {
-      toast.error("Title and YouTube link are required");
-      return;
-    }
-
+    if (!title.trim() || !videoUrl.trim()) { toast.error("Title and YouTube link are required"); return; }
     const ytId = extractYouTubeId(videoUrl.trim());
-    if (!ytId) {
-      toast.error("Please enter a valid YouTube link");
-      return;
-    }
-
+    if (!ytId) { toast.error("Please enter a valid YouTube link"); return; }
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-
       const { error } = await supabase.from("videos").insert({
         title: title.trim(),
         description: description.trim() || null,
@@ -132,12 +135,8 @@ const TeacherDashboard = () => {
         subject: subject.trim(),
       });
       if (error) throw error;
-
       toast.success("Video added successfully!");
-      setTitle("");
-      setDescription("");
-      setVideoUrl("");
-      setSubject("");
+      setTitle(""); setDescription(""); setVideoUrl(""); setSubject("");
       setShowUpload(false);
       fetchVideos();
     } catch (error: any) {
@@ -156,11 +155,7 @@ const TeacherDashboard = () => {
   const filteredStudents = students.filter((s) => {
     if (!searchCode.trim()) return true;
     const q = searchCode.toLowerCase();
-    return (
-      s.verification_code.toLowerCase().includes(q) ||
-      s.full_name.toLowerCase().includes(q) ||
-      s.email.toLowerCase().includes(q)
-    );
+    return s.verification_code.toLowerCase().includes(q) || s.full_name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q);
   });
 
   const verifiedCount = students.filter((s) => s.is_verified).length;
@@ -210,14 +205,17 @@ const TeacherDashboard = () => {
         </div>
 
         <Tabs defaultValue="students" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="students" className="gap-1">
+          <TabsList className="w-full grid grid-cols-4">
+            <TabsTrigger value="students" className="gap-1 text-xs">
               <Users className="w-4 h-4" /> Students
             </TabsTrigger>
-            <TabsTrigger value="videos" className="gap-1">
+            <TabsTrigger value="videos" className="gap-1 text-xs">
               <Video className="w-4 h-4" /> Videos
             </TabsTrigger>
-            <TabsTrigger value="posts" className="gap-1">
+            <TabsTrigger value="live" className="gap-1 text-xs">
+              <Radio className="w-4 h-4" /> Live
+            </TabsTrigger>
+            <TabsTrigger value="posts" className="gap-1 text-xs">
               <Megaphone className="w-4 h-4" /> Posts
             </TabsTrigger>
           </TabsList>
@@ -225,12 +223,7 @@ const TeacherDashboard = () => {
           <TabsContent value="students" className="space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email or verification code..."
-                value={searchCode}
-                onChange={(e) => setSearchCode(e.target.value)}
-                className="pl-10"
-              />
+              <Input placeholder="Search by name, email or code..." value={searchCode} onChange={(e) => setSearchCode(e.target.value)} className="pl-10" />
             </div>
             <div className="space-y-3">
               {filteredStudents.length === 0 ? (
@@ -253,9 +246,7 @@ const TeacherDashboard = () => {
                           </div>
                           <p className="text-sm text-muted-foreground truncate">{student.email}</p>
                           <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <GraduationCap className="w-3 h-3" /> {student.class || "N/A"}
-                            </span>
+                            <span className="flex items-center gap-1"><GraduationCap className="w-3 h-3" /> {student.class || "N/A"}</span>
                             <span>Code: <code className="font-mono font-bold text-foreground">{student.verification_code}</code></span>
                           </div>
                         </div>
@@ -293,6 +284,29 @@ const TeacherDashboard = () => {
                 <CardContent>
                   <form onSubmit={handleAddVideo} className="space-y-4">
                     <div className="space-y-2">
+                      <Label>YouTube Link * <span className="text-xs text-muted-foreground">(Unlisted or Public)</span></Label>
+                      <Input
+                        placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                        value={videoUrl}
+                        onChange={(e) => setVideoUrl(e.target.value)}
+                        required
+                      />
+                      {videoUrl && extractYouTubeId(videoUrl) && (
+                        <>
+                          <div className="mt-2 rounded-lg overflow-hidden border border-border/50">
+                            <img src={`https://img.youtube.com/vi/${extractYouTubeId(videoUrl)}/hqdefault.jpg`} alt="Video thumbnail" className="w-full h-auto" />
+                          </div>
+                          <Button type="button" variant="outline" size="sm" className="w-full mt-2" onClick={handleAiSuggest} disabled={aiLoading}>
+                            {aiLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                            {aiLoading ? "AI is thinking..." : "Auto-fill with AI"}
+                          </Button>
+                        </>
+                      )}
+                      {videoUrl && !extractYouTubeId(videoUrl) && (
+                        <p className="text-xs text-destructive">Invalid YouTube URL</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
                       <Label>Title *</Label>
                       <Input placeholder="Video title" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={200} />
                     </div>
@@ -303,27 +317,6 @@ const TeacherDashboard = () => {
                     <div className="space-y-2">
                       <Label>Description</Label>
                       <Textarea placeholder="Brief description..." value={description} onChange={(e) => setDescription(e.target.value)} rows={3} maxLength={1000} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>YouTube Link * <span className="text-xs text-muted-foreground">(Unlisted or Public)</span></Label>
-                      <Input
-                        placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
-                        value={videoUrl}
-                        onChange={(e) => setVideoUrl(e.target.value)}
-                        required
-                      />
-                      {videoUrl && extractYouTubeId(videoUrl) && (
-                        <div className="mt-2 rounded-lg overflow-hidden border border-border/50">
-                          <img
-                            src={`https://img.youtube.com/vi/${extractYouTubeId(videoUrl)}/hqdefault.jpg`}
-                            alt="Video thumbnail"
-                            className="w-full h-auto"
-                          />
-                        </div>
-                      )}
-                      {videoUrl && !extractYouTubeId(videoUrl) && (
-                        <p className="text-xs text-destructive">Invalid YouTube URL</p>
-                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button type="submit" disabled={saving} className="flex-1 bg-accent hover:bg-accent/90 text-accent-foreground">
@@ -372,16 +365,17 @@ const TeacherDashboard = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="live" className="space-y-4">
+            <LiveStreamSection isTeacher />
+          </TabsContent>
+
           <TabsContent value="posts" className="space-y-4">
             {!showCreatePost ? (
               <Button onClick={() => setShowCreatePost(true)} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
                 <Plus className="w-4 h-4 mr-2" /> Create Post
               </Button>
             ) : (
-              <CreatePostForm
-                onCreated={() => { setShowCreatePost(false); }}
-                onCancel={() => setShowCreatePost(false)}
-              />
+              <CreatePostForm onCreated={() => setShowCreatePost(false)} onCancel={() => setShowCreatePost(false)} />
             )}
             <PostsSection isTeacher />
           </TabsContent>
