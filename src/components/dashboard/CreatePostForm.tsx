@@ -76,6 +76,12 @@ const CreatePostForm = ({ onCreated, onCancel }: CreatePostFormProps) => {
         attachment_type: attachmentType,
       });
       if (error) throw error;
+      // Notify students
+      await supabase.rpc("notify_all_students", {
+        _type: "new_post",
+        _title: "New Post: " + title.trim(),
+        _message: type === "announcement" ? "New announcement posted." : "New discussion posted.",
+      });
       toast.success("Post created!");
       onCreated();
     } catch (err: any) {
