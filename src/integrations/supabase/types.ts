@@ -126,6 +126,27 @@ export type Database = {
           },
         ]
       }
+      bookmarks: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: []
+      }
       live_chat_messages: {
         Row: {
           created_at: string
@@ -418,6 +439,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           class: string
           created_at: string
           email: string
@@ -429,6 +451,7 @@ export type Database = {
           verification_code: string
         }
         Insert: {
+          avatar_url?: string | null
           class?: string
           created_at?: string
           email: string
@@ -440,6 +463,7 @@ export type Database = {
           verification_code?: string
         }
         Update: {
+          avatar_url?: string | null
           class?: string
           created_at?: string
           email?: string
@@ -609,6 +633,33 @@ export type Database = {
           longest_streak?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      student_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          video_id?: string
         }
         Relationships: []
       }
