@@ -92,9 +92,9 @@ export const ProgressLeaderboard = () => {
   }
 
   const getRankIcon = (index: number) => {
-    if (index === 0) return <Crown className="w-5 h-5 text-yellow-500" />;
-    if (index === 1) return <Medal className="w-5 h-5 text-gray-400" />;
-    if (index === 2) return <Medal className="w-5 h-5 text-amber-600" />;
+    if (index === 0) return <Crown className="w-5 h-5 text-accent" />;
+    if (index === 1) return <Medal className="w-5 h-5 text-muted-foreground" />;
+    if (index === 2) return <Medal className="w-5 h-5 text-primary" />;
     return <span className="text-xs font-bold text-muted-foreground w-5 text-center">#{index + 1}</span>;
   };
 
@@ -176,7 +176,7 @@ export const ProgressLeaderboard = () => {
                   <CardContent className="p-3">
                     <div className="flex justify-between items-center mb-1.5">
                       <p className="text-sm font-medium truncate flex-1">{q.quiz_title}</p>
-                      <span className={`text-sm font-bold ${pct >= 70 ? "text-green-600" : pct >= 40 ? "text-yellow-600" : "text-red-500"}`}>
+                      <span className={`text-sm font-bold ${pct >= 70 ? "text-accent" : pct >= 40 ? "text-primary" : "text-destructive"}`}>
                         {q.score}/{q.total_marks}
                       </span>
                     </div>
