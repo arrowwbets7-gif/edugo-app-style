@@ -85,20 +85,39 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
   const playerRef = useRef<any>(null);
   const playerContainerId = `live-yt-player-${stream.id}`;
 
+  // Initialize YT API player (same approach as CustomVideoPlayer)
+  useEffect(() => {
+    let mounted = true;
+    loadYTApi().then(() => {
+      if (!mounted) return;
+      playerRef.current = new window.YT.Player(playerContainerId, {
+        videoId: stream.youtube_id,
+        playerVars: {
+          autoplay: 1,
+          controls: 0,
+          modestbranding: 1,
+          rel: 0,
+          showinfo: 0,
+          iv_load_policy: 3,
+          disablekb: 1,
+          fs: 0,
+          playsinline: 1,
+          origin: window.location.origin,
+        },
+        events: {
+          onReady: (e: any) => { e.target.playVideo(); },
+        },
+      });
+    });
+    return () => { mounted = false; playerRef.current?.destroy(); };
+  }, [stream.youtube_id]);
+
   useEffect(() => {
     fetchChat(stream.id);
     recordAttendance(stream.id);
     fetchAttendanceCount(stream.id);
     fetchLivePolls();
     fetchLiveQuizzes();
-
-    const channel = supabase
-      .channel(`live-chat-${stream.id}`)
-      .on("postgres_changes", {
-        event: "*", schema: "public", table: "live_chat_messages",
-        filter: `stream_id=eq.${stream.id}`,
-      }, () => fetchChat(stream.id))
-      .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [stream.id]);
