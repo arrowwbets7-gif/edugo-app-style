@@ -197,13 +197,26 @@ const LiveStreamSection = ({ isTeacher = false }: LiveStreamSectionProps) => {
           </div>
         </div>
 
-        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black" onContextMenu={(e) => e.preventDefault()}>
+        <div
+          className="relative w-full aspect-video rounded-lg overflow-hidden bg-black select-none"
+          onContextMenu={(e) => e.preventDefault()}
+          onDragStart={(e) => e.preventDefault()}
+        >
           <iframe
-            src={`https://www.youtube.com/embed/${activeStream.youtube_id}?autoplay=1&modestbranding=1&rel=0`}
-            className="w-full h-full"
+            src={`https://www.youtube.com/embed/${activeStream.youtube_id}?autoplay=1&modestbranding=1&rel=0&controls=0&disablekb=1&fs=0&iv_load_policy=3&showinfo=0&cc_load_policy=0`}
+            className="w-full h-full pointer-events-none"
             allow="autoplay; encrypted-media"
-            allowFullScreen
+            allowFullScreen={false}
+            sandbox="allow-scripts allow-same-origin"
+            referrerPolicy="no-referrer"
+            style={{ border: 'none' }}
           />
+          {/* Top overlay to block YouTube logo/title */}
+          <div className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-black/60 to-transparent z-10" />
+          {/* Bottom overlay to block controls area */}
+          <div className="absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-black/60 to-transparent z-10" />
+          {/* Full overlay to block all interaction */}
+          <div className="absolute inset-0 z-20" />
         </div>
 
         {pinnedMessages.length > 0 && (
