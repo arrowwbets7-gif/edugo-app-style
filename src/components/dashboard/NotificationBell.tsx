@@ -34,6 +34,13 @@ const NotificationBell = () => {
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
+  // Request browser notification permission on mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     fetchNotifications();
@@ -49,7 +56,15 @@ const NotificationBell = () => {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          setNotifications((prev) => [payload.new as Notification, ...prev]);
+          const newNotif = payload.new as Notification;
+          setNotifications((prev) => [newNotif, ...prev]);
+          // Show browser notification
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification(newNotif.title, {
+              body: newNotif.message,
+              icon: "/favicon.ico",
+            });
+          }
         }
       )
       .subscribe();
@@ -105,27 +120,27 @@ const NotificationBell = () => {
         <Button
           variant="ghost"
           size="icon"
-          className="relative text-primary-foreground/70 hover:text-primary-foreground"
+          className="relative h-9 w-9 text-primary-foreground/70 hover:text-primary-foreground"
         >
-          <Bell className="w-5 h-5" />
+          <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center min-w-[18px] px-1">
+            <span className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
+        <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/50">
           <h4 className="text-sm font-semibold">Notifications</h4>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              className="text-xs h-6 px-2 text-muted-foreground"
+              className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
               onClick={markAllRead}
             >
-              <Check className="w-3 h-3 mr-1" /> Mark all read
+              <Check className="h-3 w-3" /> Mark all read
             </Button>
           )}
         </div>
@@ -139,27 +154,27 @@ const NotificationBell = () => {
               {notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`px-3 py-2.5 flex items-start gap-2.5 cursor-pointer hover:bg-muted/50 transition-colors ${
+                  className={`flex items-start gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors ${
                     !n.is_read ? "bg-accent/5" : ""
                   }`}
                   onClick={() => markRead(n.id)}
                 >
-                  <div className="mt-0.5 flex-shrink-0">
-                    {typeIcons[n.type] || <Bell className="w-3.5 h-3.5 text-muted-foreground" />}
+                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
+                    {typeIcons[n.type] || <Bell className="h-3.5 w-3.5 text-muted-foreground" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-xs leading-tight ${!n.is_read ? "font-semibold" : ""}`}>
+                    <p className={`text-xs leading-snug ${!n.is_read ? "font-semibold text-foreground" : "text-foreground/80"}`}>
                       {n.title}
                     </p>
                     {n.message && (
-                      <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                      <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2 leading-snug">
                         {n.message}
                       </p>
                     )}
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{timeAgo(n.created_at)}</p>
+                    <p className="text-[10px] text-muted-foreground/70 mt-1">{timeAgo(n.created_at)}</p>
                   </div>
                   {!n.is_read && (
-                    <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0 mt-1" />
+                    <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent" />
                   )}
                 </div>
               ))}
