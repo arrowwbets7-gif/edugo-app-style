@@ -229,11 +229,10 @@ const LiveStreamActiveView = ({ stream, isTeacher, onClose, onEndStream }: Props
         onDragStart={(e) => e.preventDefault()}
       >
         <iframe
-          src={`https://www.youtube.com/embed/${stream.youtube_id}?autoplay=1&modestbranding=1&rel=0&controls=0&disablekb=1&fs=0&iv_load_policy=3&showinfo=0&cc_load_policy=0`}
+          src={`https://www.youtube.com/embed/${stream.youtube_id}?autoplay=1&modestbranding=1&rel=0&controls=0&disablekb=1&fs=0&iv_load_policy=3&showinfo=0&cc_load_policy=0&origin=${encodeURIComponent(window.location.origin)}`}
           className="w-full h-full pointer-events-none"
           allow="autoplay; encrypted-media"
           allowFullScreen={false}
-          sandbox="allow-scripts allow-same-origin"
           referrerPolicy="no-referrer"
           style={{ border: 'none' }}
         />
