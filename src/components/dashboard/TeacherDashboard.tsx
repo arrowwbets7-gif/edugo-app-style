@@ -609,9 +609,6 @@ const TeacherDashboard = () => {
             <QuizzesSection isTeacher />
           </TabsContent>
 
-          <TabsContent value="homework" className="space-y-3">
-            <AssignmentsSection isTeacher />
-          </TabsContent>
         </Tabs>
       </main>
     </div>
