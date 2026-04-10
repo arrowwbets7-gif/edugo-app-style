@@ -34,6 +34,13 @@ const NotificationBell = () => {
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
+  // Request browser notification permission on mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
   useEffect(() => {
     if (!user) return;
     fetchNotifications();
@@ -49,7 +56,15 @@ const NotificationBell = () => {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          setNotifications((prev) => [payload.new as Notification, ...prev]);
+          const newNotif = payload.new as Notification;
+          setNotifications((prev) => [newNotif, ...prev]);
+          // Show browser notification
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification(newNotif.title, {
+              body: newNotif.message,
+              icon: "/favicon.ico",
+            });
+          }
         }
       )
       .subscribe();
