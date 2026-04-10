@@ -12,8 +12,8 @@ import { Link } from "react-router-dom";
 import {
   LogOut, Home, Users, Video, CheckCircle2, XCircle,
   Search, Trash2, Plus, ShieldCheck, Clock, Loader2, LinkIcon, Megaphone,
-  Radio, Sparkles, RefreshCw, BarChart3, ClipboardCheck, BookOpen, UserX,
-  TrendingUp, Activity, Eye, Flame, Award
+  Radio, Sparkles, RefreshCw, BarChart3, ClipboardCheck,
+  TrendingUp, Activity, Eye, Flame, Award, UserX
 } from "lucide-react";
 import { toast } from "sonner";
 import PostsSection from "./PostsSection";

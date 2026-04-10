@@ -155,7 +155,8 @@ const StudentDashboard = () => {
           <Link to="/" className="text-lg font-extrabold font-heading text-primary-foreground">
             EduGo<span className="text-accent">Classes</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <NotificationBell />
             {streak.current > 0 && (
               <Badge className="bg-accent/20 text-accent border-accent/30 text-xs gap-1">
                 <Flame className="w-3 h-3" /> {streak.current} day{streak.current > 1 ? "s" : ""}
