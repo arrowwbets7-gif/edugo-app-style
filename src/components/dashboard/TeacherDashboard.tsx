@@ -181,13 +181,17 @@ const TeacherDashboard = () => {
     }
   };
 
-  const uploadWithProgress = (bucket: string, path: string, file: File, onProgress: (pct: number) => void): Promise<string> => {
+  const uploadWithProgress = async (bucket: string, path: string, file: File, onProgress: (pct: number) => void): Promise<string> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || "";
+
     return new Promise((resolve, reject) => {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
       const xhr = new XMLHttpRequest();
       xhr.open("POST", url);
-      xhr.setRequestHeader("Authorization", `Bearer ${(supabase as any).auth['headers']?.['Authorization'] || ''}`);
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
       xhr.setRequestHeader("apikey", import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+      xhr.setRequestHeader("Content-Type", file.type);
       xhr.setRequestHeader("x-upsert", "false");
 
       xhr.upload.onprogress = (e) => {
