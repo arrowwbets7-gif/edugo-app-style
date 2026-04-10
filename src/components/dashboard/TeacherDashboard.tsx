@@ -12,7 +12,7 @@ import { Link } from "react-router-dom";
 import {
   LogOut, Home, Users, Video, CheckCircle2, XCircle,
   Search, Trash2, Plus, ShieldCheck, Clock, GraduationCap, Loader2, LinkIcon, Megaphone,
-  Radio, Sparkles
+  Radio, Sparkles, RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
 import PostsSection from "./PostsSection";
