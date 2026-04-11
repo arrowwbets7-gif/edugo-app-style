@@ -44,8 +44,8 @@ const Signup = () => {
       if (signInError) {
         toast.error(signInError.message);
       } else {
-        toast.success("Account created! Share your code with your teacher.");
-        navigate("/dashboard");
+        toast.success("Account created!");
+        navigate("/signup-success");
       }
     }
   };
