@@ -19,15 +19,15 @@ const Dashboard = () => {
   if (!user) return <Navigate to="/login" replace />;
 
   if (role === "teacher" || role === "admin") {
-    return <TeacherDashboard />;
+    return (
+      <>
+        <TeacherDashboard />
+        <EduGoAIChat />
+      </>
+    );
   }
 
-  return (
-    <>
-      <StudentDashboard />
-      <EduGoAIChat />
-    </>
-  );
+  return <StudentDashboard />;
 };
 
 export default Dashboard;
