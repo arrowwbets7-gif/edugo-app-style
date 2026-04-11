@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 const Login = () => {
@@ -34,62 +34,64 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-primary flex flex-col">
-      {/* Top decorative area */}
-      <div className="flex-shrink-0 px-6 pt-12 pb-8">
+      <div className="flex-shrink-0 px-6 pt-14 pb-10">
         <Link to="/" className="text-xl font-extrabold font-heading text-primary-foreground">
           EduGo<span className="text-accent">Classes</span>
         </Link>
-        <h1 className="text-3xl font-bold font-heading text-primary-foreground mt-8 leading-tight">
-          Welcome<br />back
+        <h1 className="text-3xl font-bold font-heading text-primary-foreground mt-10 leading-tight">
+          Welcome back
         </h1>
-        <p className="text-primary-foreground/60 text-sm mt-2">Sign in to continue learning</p>
+        <p className="text-primary-foreground/50 text-sm mt-2">Sign in to continue learning</p>
       </div>
 
-      {/* Form card */}
-      <div className="flex-1 bg-background rounded-t-[2rem] px-6 pt-8 pb-8 animate-fade-in">
+      <div className="flex-1 bg-background rounded-t-[2rem] px-6 pt-8 pb-8">
         <form onSubmit={handleSubmit} className="space-y-5 max-w-md mx-auto">
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</Label>
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Email Address
+            </Label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-muted-foreground/40" />
               <Input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="pl-11 h-12 rounded-xl bg-secondary/50 border-border/30 focus:bg-card transition-colors"
+                className="pl-11 h-12 rounded-xl bg-secondary/40 border-border/30 text-sm focus:bg-card focus:border-accent/40 transition-all"
                 required
               />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Password</Label>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Password
+            </Label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-muted-foreground/40" />
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-11 pr-11 h-12 rounded-xl bg-secondary/50 border-border/30 focus:bg-card transition-colors"
+                className="pl-11 pr-11 h-12 rounded-xl bg-secondary/40 border-border/30 text-sm focus:bg-card focus:border-accent/40 transition-all"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-foreground transition-colors"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
               </button>
             </div>
           </div>
 
           <Button
             type="submit"
-            className="w-full h-12 rounded-xl text-sm font-semibold bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg shadow-accent/20"
+            className="w-full h-12 rounded-xl text-sm font-semibold bg-accent hover:bg-accent/90 text-accent-foreground shadow-md"
             disabled={loading}
           >
             {loading ? (

@@ -36,23 +36,23 @@ const Signup = () => {
     }
     setLoading(true);
     const { error } = await signUp(email.trim(), password, fullName.trim(), studentClass);
-    setLoading(false);
     if (error) {
+      setLoading(false);
       toast.error(error.message);
+      return;
+    }
+    const { error: signInError } = await signIn(email.trim(), password);
+    setLoading(false);
+    if (signInError) {
+      toast.error(signInError.message);
     } else {
-      const { error: signInError } = await signIn(email.trim(), password);
-      if (signInError) {
-        toast.error(signInError.message);
-      } else {
-        toast.success("Account created!");
-        navigate("/signup-success");
-      }
+      toast.success("Account created!");
+      navigate("/signup-success");
     }
   };
 
   return (
     <div className="min-h-screen bg-primary flex flex-col">
-      {/* Top decorative area */}
       <div className="flex-shrink-0 px-6 pt-12 pb-6">
         <Link to="/" className="text-xl font-extrabold font-heading text-primary-foreground">
           EduGo<span className="text-accent">Classes</span>
@@ -60,51 +60,56 @@ const Signup = () => {
         <h1 className="text-3xl font-bold font-heading text-primary-foreground mt-6 leading-tight">
           Create your<br />account
         </h1>
-        <p className="text-primary-foreground/60 text-sm mt-2">Start your learning journey today</p>
+        <p className="text-primary-foreground/50 text-sm mt-2">Start your learning journey today</p>
       </div>
 
-      {/* Form card */}
-      <div className="flex-1 bg-background rounded-t-[2rem] px-6 pt-7 pb-8 animate-fade-in">
+      <div className="flex-1 bg-background rounded-t-[2rem] px-6 pt-7 pb-8">
         <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
-          <div className="space-y-1.5">
-            <Label htmlFor="fullName" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Full Name</Label>
+          <div className="space-y-2">
+            <Label htmlFor="fullName" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Full Name
+            </Label>
             <div className="relative">
-              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-muted-foreground/40" />
               <Input
                 id="fullName"
-                placeholder="John Doe"
+                placeholder="Your full name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="pl-11 h-12 rounded-xl bg-secondary/50 border-border/30 focus:bg-card transition-colors"
+                className="pl-11 h-12 rounded-xl bg-secondary/40 border-border/30 text-sm focus:bg-card focus:border-accent/40 transition-all"
                 required
                 maxLength={100}
               />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</Label>
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Email Address
+            </Label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-muted-foreground/40" />
               <Input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="pl-11 h-12 rounded-xl bg-secondary/50 border-border/30 focus:bg-card transition-colors"
+                className="pl-11 h-12 rounded-xl bg-secondary/40 border-border/30 text-sm focus:bg-card focus:border-accent/40 transition-all"
                 required
                 maxLength={255}
               />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="class" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Class / Course</Label>
+          <div className="space-y-2">
+            <Label htmlFor="class" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Class / Course
+            </Label>
             <Select value={studentClass} onValueChange={setStudentClass}>
-              <SelectTrigger className="w-full h-12 rounded-xl bg-secondary/50 border-border/30">
+              <SelectTrigger className="w-full h-12 rounded-xl bg-secondary/40 border-border/30 text-sm">
                 <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-muted-foreground/50" />
+                  <GraduationCap className="w-[18px] h-[18px] text-muted-foreground/40" />
                   <SelectValue placeholder="Select your class" />
                 </div>
               </SelectTrigger>
@@ -116,33 +121,35 @@ const Signup = () => {
             </Select>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Password</Label>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Password
+            </Label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-muted-foreground/40" />
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Min 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-11 pr-11 h-12 rounded-xl bg-secondary/50 border-border/30 focus:bg-card transition-colors"
+                className="pl-11 pr-11 h-12 rounded-xl bg-secondary/40 border-border/30 text-sm focus:bg-card focus:border-accent/40 transition-all"
                 required
                 minLength={6}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-foreground transition-colors"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
               </button>
             </div>
           </div>
 
           <Button
             type="submit"
-            className="w-full h-12 rounded-xl text-sm font-semibold bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg shadow-accent/20"
+            className="w-full h-12 rounded-xl text-sm font-semibold bg-accent hover:bg-accent/90 text-accent-foreground shadow-md"
             disabled={loading}
           >
             {loading ? (
