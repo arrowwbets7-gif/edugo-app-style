@@ -209,11 +209,6 @@ const StudentDashboard = () => {
         </div>
 
         {/* Daily Goals */}
-        {profile?.is_verified && (
-          <div className="animate-fade-in">
-            <DailyGoals />
-          </div>
-        )}
 
         {/* Quick Stats */}
         {profile?.is_verified && (quizStats.attempted > 0 || attendanceCount > 0) && (
@@ -397,7 +392,7 @@ const StudentDashboard = () => {
 
 
             <TabsContent value="progress">
-              <ProgressLeaderboard />
+              <MyStats />
             </TabsContent>
           </Tabs>
         ) : (
