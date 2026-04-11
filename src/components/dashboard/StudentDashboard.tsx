@@ -21,8 +21,7 @@ import PostsSection from "./PostsSection";
 import LiveStreamSection from "./LiveStreamSection";
 import PollsSection from "./PollsSection";
 import QuizzesSection from "./QuizzesSection";
-import ProgressLeaderboard from "./ProgressLeaderboard";
-import DailyGoals from "./DailyGoals";
+import MyStats from "./MyStats";
 
 interface Video {
   id: string;
@@ -210,11 +209,6 @@ const StudentDashboard = () => {
         </div>
 
         {/* Daily Goals */}
-        {profile?.is_verified && (
-          <div className="animate-fade-in">
-            <DailyGoals />
-          </div>
-        )}
 
         {/* Quick Stats */}
         {profile?.is_verified && (quizStats.attempted > 0 || attendanceCount > 0) && (
@@ -398,7 +392,7 @@ const StudentDashboard = () => {
 
 
             <TabsContent value="progress">
-              <ProgressLeaderboard />
+              <MyStats />
             </TabsContent>
           </Tabs>
         ) : (
